@@ -42,13 +42,13 @@ def is_protected(
     Protected: filesystem roots, the home folder, each protected path and
     everything under it, and files with a protected extension. The path is
     resolved first, so a link is judged by its target. Comparison is by path
-    component, so /usr-local is not inside /usr. Lists default to the
-    built-in config; a path that cannot be resolved counts as protected.
+    component, so /usr-local is not inside /usr. The given lists add to the
+    built-in ones and can never remove them, so a config file (including a
+    .disk-cleaner.yaml inside the folder being cleaned) cannot unprotect
+    system paths. A path that cannot be resolved counts as protected.
     """
-    if protected_paths is None:
-        protected_paths = get_protected_paths()
-    if protected_extensions is None:
-        protected_extensions = get_protected_extensions()
+    protected_paths = [*get_protected_paths(), *(protected_paths or [])]
+    protected_extensions = [*get_protected_extensions(), *(protected_extensions or [])]
 
     try:
         resolved = Path(path).expanduser().resolve()

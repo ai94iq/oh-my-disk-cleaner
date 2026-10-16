@@ -48,6 +48,23 @@ def test_defaults_used_when_lists_omitted(tmp_path):
     assert is_protected(tmp_path / "a.txt") is False
 
 
+def test_config_cannot_remove_builtin_protection(tmp_path):
+    # Empty lists, e.g. from a planted .disk-cleaner.yaml, still protect defaults
+    system_dir = Path(get_protected_paths()[0])
+    assert is_protected(system_dir / "x.txt", [], []) is True
+    assert is_protected(tmp_path / "tool.exe", [], []) is True
+
+
+def test_project_config_cannot_unprotect(tmp_path):
+    (tmp_path / ".disk-cleaner.yaml").write_text(
+        "protected:\n  paths: []\nsafety:\n  protected_extensions: []\n", encoding="utf-8"
+    )
+    checker = SafetyChecker(config=Config.load(str(tmp_path)))
+    checker.check_locks = False
+    checker.verify_perms = False
+    assert checker.verify_file(file_info(tmp_path / "tool.exe")) == FileStatus.PROTECTED
+
+
 def test_windows_defaults_follow_environment(monkeypatch):
     monkeypatch.setenv("SystemRoot", r"X:\Win")
     assert r"X:\Win" in get_protected_paths()
