@@ -22,6 +22,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
+from diskcleaner.core.units import format_size
+
 
 class GrowthAnalyzer:
     """
@@ -435,20 +437,3 @@ class GrowthAnalyzer:
             self._save_history()
 
         return removed_count
-
-
-def format_size(bytes_size: int) -> str:
-    """
-    Format byte size to human-readable string.
-
-    Args:
-        bytes_size: Size in bytes
-
-    Returns:
-        Formatted string (e.g., "1.5 GB", "500 MB")
-    """
-    for unit in ["B", "KB", "MB", "GB", "TB"]:
-        if bytes_size < 1024.0:
-            return f"{bytes_size:.2f} {unit}"
-        bytes_size /= 1024.0
-    return f"{bytes_size:.2f} PB"

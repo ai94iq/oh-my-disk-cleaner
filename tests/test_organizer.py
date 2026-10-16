@@ -331,9 +331,10 @@ class TestFileOrganizer:
 
     def test_format_size(self, sample_organizer):
         """Test size formatting."""
-        assert sample_organizer._format_size(1024) == "1.0 KB"
-        assert sample_organizer._format_size(1024 * 1024) == "1.0 MB"
-        assert sample_organizer._format_size(1024 * 1024 * 1024) == "1.0 GB"
+        # Shared format (diskcleaner.core.units.format_size)
+        assert sample_organizer._format_size(1024) == "1.00 KB"
+        assert sample_organizer._format_size(1024 * 1024) == "1.00 MB"
+        assert sample_organizer._format_size(1024 * 1024 * 1024) == "1.00 GB"
 
     def test_organize_method(self, sample_organizer, sample_files):
         """Test high-level organize method."""

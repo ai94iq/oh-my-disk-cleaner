@@ -30,6 +30,8 @@ from skill_bootstrap import setup_skill_environment  # noqa: E402
 
 setup_skill_environment(require_modules=False)
 
+from diskcleaner.core.units import format_size  # noqa: E402
+
 try:
     from diskcleaner.core.duplicate_finder import DuplicateFinder, DuplicateGroup
     from diskcleaner.core.progress import ProgressBar
@@ -39,23 +41,6 @@ try:
 except ImportError:
     print("Warning: diskcleaner modules not available", file=sys.stderr)
     PROGRESS_AVAILABLE = False
-
-
-def format_size(bytes_size: int) -> str:
-    """
-    Format byte size to human-readable string.
-
-    Args:
-        bytes_size: Size in bytes
-
-    Returns:
-        Formatted string (e.g., "1.5 GB", "500 MB")
-    """
-    for unit in ["B", "KB", "MB", "GB", "TB"]:
-        if bytes_size < 1024.0:
-            return f"{bytes_size:.2f} {unit}"
-        bytes_size /= 1024.0
-    return f"{bytes_size:.2f} PB"
 
 
 def print_duplicates(duplicates: List[DuplicateGroup], show_all: bool = False):

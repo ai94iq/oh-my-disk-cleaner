@@ -103,6 +103,19 @@ def test_junctions_are_not_followed(tmp_path):
     assert 0.9 <= sizes["cyc"] <= 1.1
 
 
+def test_report_shows_small_and_empty_folders(tmp_path):
+    (tmp_path / "small").mkdir()
+    (tmp_path / "small" / "f.txt").write_bytes(b"x" * 3000)
+    (tmp_path / "empty").mkdir()
+
+    analyzer = load_script().ProgressiveDiskAnalyzer(str(tmp_path))
+    results = analyzer.progressive_scan(max_files=1000, max_seconds=30, show_progress=False)
+    report = analyzer.format_report(results)
+
+    assert "small: 2.93 KB" in report
+    assert "empty: 0 B" in report
+
+
 def test_include_windows_reaches_the_scanner(tmp_path, monkeypatch):
     module = load_script()
     seen = {}

@@ -17,6 +17,7 @@ from diskcleaner.core.classifier import FileClassifier
 from diskcleaner.core.rules.archive_rules import RuleEngine
 from diskcleaner.core.safety import SafetyChecker
 from diskcleaner.core.scanner import DirectoryScanner, FileInfo
+from diskcleaner.core.units import format_size
 
 
 @dataclass
@@ -462,20 +463,8 @@ class FileOrganizer:
         return "\n".join(lines)
 
     def _format_size(self, size_bytes: int) -> str:
-        """
-        Format size in human-readable format.
-
-        Args:
-            size_bytes: Size in bytes.
-
-        Returns:
-            Formatted size string.
-        """
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if size_bytes < 1024.0:
-                return f"{size_bytes:.1f} {unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.1f} PB"
+        """Format a byte count for display (shared format)."""
+        return format_size(size_bytes)
 
     def organize(
         self,

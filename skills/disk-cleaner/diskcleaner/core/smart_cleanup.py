@@ -16,6 +16,7 @@ from diskcleaner.core.classifier import FileClassifier
 from diskcleaner.core.duplicate_finder import DuplicateFinder, DuplicateGroup
 from diskcleaner.core.safety import SafetyChecker
 from diskcleaner.core.scanner import DirectoryScanner, FileInfo
+from diskcleaner.core.units import format_size
 
 
 @dataclass
@@ -276,22 +277,8 @@ class SmartCleanupEngine:
         return "\n".join(lines)
 
     def _format_size(self, size_bytes: int) -> str:
-        """
-        Format byte size to human-readable string.
-
-        Args:
-            size_bytes: Size in bytes.
-
-        Returns:
-            Formatted size string (e.g., "1.23 GB").
-        """
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if size_bytes < 1024.0:
-                if unit == "B":
-                    return f"{size_bytes:,} {unit}"
-                return f"{size_bytes:.2f} {unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.2f} PB"
+        """Format a byte count for display (shared format)."""
+        return format_size(size_bytes)
 
     def get_files_by_type(self, report: CleanupReport, file_type: str) -> List[FileInfo]:
         """

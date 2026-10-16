@@ -12,6 +12,7 @@ from typing import List, Optional, Set, Tuple
 
 from diskcleaner.core.scanner import FileInfo
 from diskcleaner.core.smart_cleanup import CleanupReport, SmartCleanupEngine
+from diskcleaner.core.units import format_size
 
 
 class InteractiveCleanupUI:
@@ -541,14 +542,8 @@ class InteractiveCleanupUI:
             return 4
 
     def _format_size(self, size_bytes: int) -> str:
-        """Format byte size to human-readable string."""
-        for unit in ["B", "KB", "MB", "GB", "TB"]:
-            if size_bytes < 1024.0:
-                if unit == "B":
-                    return f"{size_bytes:,} {unit}"
-                return f"{size_bytes:.2f} {unit}"
-            size_bytes /= 1024.0
-        return f"{size_bytes:.2f} PB"
+        """Format a byte count for display (shared format)."""
+        return format_size(size_bytes)
 
     def confirm_and_cleanup(
         self,

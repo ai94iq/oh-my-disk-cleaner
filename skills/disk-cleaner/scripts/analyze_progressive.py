@@ -41,6 +41,8 @@ except Exception as e:
     DirectoryScanner = None
     Config = None
 
+from diskcleaner.core.units import format_size  # noqa: E402
+
 
 class ProgressiveDiskAnalyzer:
     """Progressive disk analyzer - provides real-time feedback and early results"""
@@ -181,6 +183,7 @@ class ProgressiveDiskAnalyzer:
                         {
                             "path": file_info.path,
                             "name": file_info.name,
+                            "size_bytes": file_info.size,
                             "size_gb": round(file_info.size / (1024**3), 2),
                             "size_mb": round(file_info.size / (1024**2), 2),
                         }
@@ -188,10 +191,11 @@ class ProgressiveDiskAnalyzer:
 
                 # Add the file to its top-level folder's total. String slicing,
                 # not Path(): this runs once per file, millions of times.
-                if not file_info.is_dir:
-                    top, sep, _ = file_info.path[len(root_prefix) :].partition(os.sep)
-                    if sep:
-                        dir_totals[top] = dir_totals.get(top, 0) + file_info.size
+                top, sep, _ = file_info.path[len(root_prefix) :].partition(os.sep)
+                if file_info.is_dir and not sep:
+                    dir_totals.setdefault(top, 0)  # list empty top-level folders too
+                elif not file_info.is_dir and sep:
+                    dir_totals[top] = dir_totals.get(top, 0) + file_info.size
 
         except KeyboardInterrupt:
             interrupted = True
@@ -206,12 +210,13 @@ class ProgressiveDiskAnalyzer:
             {
                 "path": str(self.target_path / name),
                 "name": name,
+                "size_bytes": size,
                 "size_gb": round(size / (1024**3), 2),
                 "size_mb": round(size / (1024**2), 2),
             }
             for name, size in largest_dirs[:50]
         ]
-        results["files"].sort(key=lambda x: x["size_mb"], reverse=True)
+        results["files"].sort(key=lambda x: x["size_bytes"], reverse=True)
         results["files"] = results["files"][:50]
 
         stopped_early = interrupted or scanner.stopped_early
@@ -250,14 +255,13 @@ class ProgressiveDiskAnalyzer:
         if results.get("directories"):
             lines.append("\n[DIR] Largest Directories:")
             for i, d in enumerate(results["directories"][:20], 1):
-                size_str = f"{d['size_gb']} GB" if d["size_gb"] > 0 else f"{d['size_mb']} MB"
-                lines.append(f"   {i}. {d['name']}: {size_str}")
+                lines.append(f"   {i}. {d['name']}: {format_size(d['size_bytes'])}")
 
         # Large files
         if results.get("files"):
             lines.append("\n[FILE] Largest Files:")
             for i, f in enumerate(results["files"][:20], 1):
-                size_str = f"{f['size_gb']} GB" if f["size_gb"] > 0 else f"{f['size_mb']} MB"
+                size_str = format_size(f["size_bytes"])
                 # Shorten path
                 path_str = f"...{f['path'][-50:]}" if len(f["path"]) > 50 else f["path"]
                 lines.append(f"   {i}. {f['name']}: {size_str}")
