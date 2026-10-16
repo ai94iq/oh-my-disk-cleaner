@@ -7,6 +7,7 @@ Tests:
 - MemoryMonitor
 """
 
+import sys
 import time
 
 from diskcleaner.optimization.concurrency import ConcurrencyManager
@@ -236,6 +237,18 @@ class TestMemoryMonitor:
         usage = monitor.get_memory_usage()
         assert usage > 0
         assert isinstance(usage, (int, float))
+
+    def test_get_memory_usage_without_psutil(self, monkeypatch):
+        """Without psutil (CI does not install it) usage is still the real process size."""
+        import tracemalloc
+
+        monkeypatch.setitem(sys.modules, "psutil", None)  # import psutil -> ImportError
+        if tracemalloc.is_tracing():
+            tracemalloc.stop()
+
+        usage = MemoryMonitor().get_memory_usage()
+
+        assert usage > 1024 * 1024  # any Python process uses more than 1 MB
 
     def test_check_memory(self):
         """Test memory status check."""

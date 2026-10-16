@@ -6,8 +6,58 @@ Monitors memory usage and provides suggestions to prevent OOM.
 
 import gc
 import os
+import sys
 from dataclasses import dataclass
 from enum import Enum
+
+
+def _process_memory_bytes() -> int:
+    """
+    Resident memory of this process without psutil (standard library only).
+
+    Windows: working set from GetProcessMemoryInfo. Linux: resident pages
+    from /proc/self/statm. Elsewhere: peak RSS from getrusage (bytes on
+    macOS). Returns 0 only if every method fails.
+    """
+    if sys.platform == "win32":
+        import ctypes
+        from ctypes import wintypes
+
+        class Counters(ctypes.Structure):
+            _fields_ = [
+                ("cb", wintypes.DWORD),
+                ("PageFaultCount", wintypes.DWORD),
+                ("PeakWorkingSetSize", ctypes.c_size_t),
+                ("WorkingSetSize", ctypes.c_size_t),
+                ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+                ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+                ("PagefileUsage", ctypes.c_size_t),
+                ("PeakPagefileUsage", ctypes.c_size_t),
+            ]
+
+        counters = Counters()
+        counters.cb = ctypes.sizeof(counters)
+        get_info = ctypes.windll.psapi.GetProcessMemoryInfo
+        get_info.argtypes = [wintypes.HANDLE, ctypes.POINTER(Counters), wintypes.DWORD]
+        handle = ctypes.windll.kernel32.GetCurrentProcess()
+        if get_info(handle, ctypes.byref(counters), counters.cb):
+            return int(counters.WorkingSetSize)
+        return 0
+
+    try:
+        with open("/proc/self/statm", encoding="ascii") as statm:
+            return int(statm.read().split()[1]) * os.sysconf("SC_PAGE_SIZE")
+    except (OSError, ValueError, IndexError):
+        pass
+    try:
+        import resource
+
+        peak = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        return peak if sys.platform == "darwin" else peak * 1024
+    except (ImportError, OSError):
+        return 0
 
 
 class MemoryStatus(Enum):
@@ -64,13 +114,7 @@ class MemoryMonitor:
             process = psutil.Process(os.getpid())
             return process.memory_info().rss
         except ImportError:
-            # Fallback: use tracemalloc
-            import tracemalloc
-
-            if not tracemalloc.is_tracing():
-                tracemalloc.start()
-            current, _ = tracemalloc.get_traced_memory()
-            return current
+            return _process_memory_bytes()
 
     def check_memory(self) -> MemoryStatus:
         """
