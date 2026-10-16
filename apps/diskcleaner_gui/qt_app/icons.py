@@ -9,6 +9,8 @@ import tempfile
 from PySide6.QtCore import QByteArray, QPointF, QRectF, QSize, Qt
 from PySide6.QtGui import (
     QColor,
+    QFont,
+    QFontMetricsF,
     QGuiApplication,
     QIcon,
     QIconEngine,
@@ -159,6 +161,20 @@ def snapped(lucide_name, pixels):
     return re.sub(r"<(\w+)\s([^>]*?)\s*/>", element, ICONS[lucide_name])
 
 
+LABEL_FONT_PX = 13  # the QSS label size (QWidget font-size in theme.QSS)
+
+
+def text_centre_drop(ratio):
+    """How far below its slot an icon beside a label sits so both share a visual centre: Qt
+    centres the label's line box (room for descenders) but the icon's glyph, which put the
+    letters ~1 device px below the icons at 125% (measured). Whole device pixels."""
+    font = QFont(QGuiApplication.font())
+    font.setPixelSize(LABEL_FONT_PX)
+    metrics = QFontMetricsF(font)
+    drop = metrics.ascent() - metrics.capHeight() / 2 - metrics.height() / 2
+    return math.floor(drop * ratio + 0.5) / ratio
+
+
 def device_origin(value, ratio):
     """A logical coordinate moved to the nearest whole device pixel, so snapping starts there."""
     return math.floor(value * ratio + 0.5) / ratio
@@ -167,9 +183,10 @@ def device_origin(value, ratio):
 class SvgIconEngine(QIconEngine):
     """Draws the SVG at the painter's real size and device pixel ratio; `on_color` is the checked state."""
 
-    def __init__(self, name, color, on_color=None):
+    def __init__(self, name, color, on_color=None, beside_text=False):
         super().__init__()
         self.name, self.color, self.on_color = name, color, on_color
+        self.beside_text = beside_text  # drop to the letters' centre (text_centre_drop)
 
     def paint(self, painter, rect, mode, state):
         color = self.on_color if state == QIcon.State.On and self.on_color else self.color
@@ -191,7 +208,8 @@ class SvgIconEngine(QIconEngine):
             painter,
             QRectF(
                 device_origin(rect.x() + (rect.width() - side) / 2, ratio),
-                device_origin(rect.y() + (rect.height() - side) / 2, ratio),
+                device_origin(rect.y() + (rect.height() - side) / 2, ratio)
+                + (text_centre_drop(ratio) if self.beside_text else 0),
                 side,
                 side,
             ),
@@ -207,12 +225,12 @@ class SvgIconEngine(QIconEngine):
         return pm
 
     def clone(self):
-        return SvgIconEngine(self.name, self.color, self.on_color)
+        return SvgIconEngine(self.name, self.color, self.on_color, self.beside_text)
 
 
-def icon(name, color, on_color=None):
+def icon(name, color, on_color=None, beside_text=False):
     """An outline icon drawn in `color`; `on_color` draws the checked state (for example on an accent fill)."""
-    return QIcon(SvgIconEngine(name, color, on_color))
+    return QIcon(SvgIconEngine(name, color, on_color, beside_text))
 
 
 def chevrons(color, names=("chevron-right", "chevron-down")):

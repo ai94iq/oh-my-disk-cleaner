@@ -394,7 +394,7 @@ class MainWindow(QMainWindow):
     # ------------------------------------------------------------------ icons and theme
     def _iconed(self, action, name, key="ink", on="accent"):
         self._icons.append((action, name, key, on))
-        action.setIcon(icon(name, self.t[key], self.t[on]))
+        action.setIcon(icon(name, self.t[key], self.t[on], beside_text=True))
         return action
 
     def set_theme(self, mode, save=True):
@@ -403,7 +403,7 @@ class MainWindow(QMainWindow):
             self.settings.setValue("theme", self.theme_mode)
         self.t = apply_theme(QApplication.instance(), self.theme_mode)
         for action, name, key, on in self._icons:
-            action.setIcon(icon(name, self.t[key], self.t[on]))
+            action.setIcon(icon(name, self.t[key], self.t[on], beside_text=True))
         for holder in self.cards + self.bars:
             shade(holder.frame, self.t)
         for empty in self.empties:

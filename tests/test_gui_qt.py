@@ -648,3 +648,58 @@ class DisabledIcons(QtCase):
             with self.subTest(theme=name):
                 self.assertGreaterEqual(contrast(mixed.name(), t["panel"]), 4.5)
                 self.assertLess(DISABLED_OPACITY, 1)  # still visibly dimmed
+
+
+class IconTextAlignment(QtCase):
+    def test_icons_beside_labels_drop_to_the_letters_centre(self):
+        # Qt centres a label's line box (room for descenders) but an icon's glyph, so the
+        # letters sat ~1 device px below their icons at 125% (measured: Clean 83.5 vs 82)
+        from PySide6.QtGui import QFont, QFontMetricsF
+
+        from diskcleaner_gui.qt_app.icons import LABEL_FONT_PX, text_centre_drop
+
+        font = QFont(self.app.font())
+        font.setPixelSize(LABEL_FONT_PX)
+        metrics = QFontMetricsF(font)
+        drop = metrics.ascent() - metrics.capHeight() / 2 - metrics.height() / 2
+        for ratio in (1.0, 1.25, 1.5, 2.0):
+            with self.subTest(ratio=ratio):
+                got = text_centre_drop(ratio)
+                self.assertAlmostEqual(got * ratio, round(got * ratio))  # whole device pixels
+                self.assertLessEqual(abs(got - drop), 0.5 / ratio + 1e-9)
+
+    @unittest.skipIf(
+        os.environ.get("QT_QPA_PLATFORM") == "offscreen", "needs the real fonts of a display"
+    )
+    def test_page_switch_icons_and_labels_share_a_centre_on_screen(self):
+        self.window.set_theme("dark")
+        self.window.resize(1400, 720)
+        self.window.show()
+        self.app.processEvents()
+        button = next(
+            b for b in self.window.seg.findChildren(QAbstractButton) if b.text() == "Clean"
+        )
+        image = button.grab().toImage()
+        width, height = image.width(), image.height()
+
+        def lum(x, y):
+            c = image.pixelColor(x, y)
+            return 0.299 * c.red() + 0.587 * c.green() + 0.114 * c.blue()
+
+        background = lum(2, height // 2)
+        inked = [
+            x
+            for x in range(width)
+            if any(abs(lum(x, y) - background) > 60 for y in range(height))
+        ]
+        split = next(b for a, b in zip(inked, inked[1:]) if b - a >= 3)
+
+        def centre(x0, x1):
+            rows = [
+                y
+                for y in range(height)
+                if any(abs(lum(x, y) - background) > 60 for x in range(x0, x1))
+            ]
+            return (min(rows) + max(rows)) / 2
+
+        self.assertLessEqual(abs(centre(inked[0], split) - centre(split, inked[-1] + 1)), 0.5)
