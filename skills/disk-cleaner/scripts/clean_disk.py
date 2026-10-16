@@ -302,22 +302,11 @@ class DiskCleaner:
                 ]
             )
 
-            # Recycle Bin
+            # Recycle Bin. Prefetch and the Windows Update cache sit under
+            # %SystemRoot%, which is protected; use Disk Cleanup for those.
             recycle_path = os.path.join(os.environ.get("SYSTEMDRIVE", "C:"), "$Recycle.Bin")
             if os.path.exists(recycle_path):
                 locations["recycle"].append(recycle_path)
-
-            # Prefetch
-            prefetch = os.path.join(os.environ.get("WINDIR", ""), "Prefetch")
-            if os.path.exists(prefetch):
-                locations["temp"].append(prefetch)
-
-            # Windows Update cache
-            update_cache = os.path.join(
-                os.environ.get("WINDIR", ""), "SoftwareDistribution", "Download"
-            )
-            if os.path.exists(update_cache):
-                locations["temp"].append(update_cache)
 
         elif self.system == "darwin":
             # macOS temp and cache

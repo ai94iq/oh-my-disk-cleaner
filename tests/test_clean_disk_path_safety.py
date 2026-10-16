@@ -99,6 +99,15 @@ def test_user_config_adds_protected_paths(clean_disk, tmp_path, monkeypatch):
     assert cleaner._is_safe_to_delete(tmp_path / "cache" / "other.tmp") is True
 
 
+def test_locations_hold_no_always_refused_system_folders(clean_disk, cleaner):
+    # Folders under %SystemRoot% are protected, so listing them only adds errors
+    system_root = os.path.normcase(os.environ.get("SystemRoot", "C:\\Windows"))
+    cleaner.system = "windows"
+    for paths in cleaner.get_cleanable_locations().values():
+        for path in paths:
+            assert not os.path.normcase(path).startswith(system_root), path
+
+
 def test_cache_locations_hold_no_user_data(clean_disk, tmp_path, monkeypatch):
     roaming, local = tmp_path / "Roaming", tmp_path / "Local"
     (roaming / "Mozilla" / "Firefox" / "Profiles" / "abc.default").mkdir(parents=True)
