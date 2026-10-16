@@ -93,8 +93,8 @@ class CleanupScheduler:
         self.tasks = [t for t in self.tasks if t["name"] != task_name]
         self._save_tasks(self.tasks)
 
-    def run_task(self, task: Dict, dry_run: bool = True):
-        """Execute a single cleanup task."""
+    def run_task(self, task: Dict):
+        """Analyze a task's folder and print the report. Never deletes anything."""
         path = task["path"]
         cleanup_type = task["cleanup_type"]
 
@@ -102,7 +102,7 @@ class CleanupScheduler:
         print(f"Running task: {task['name']}")
         print(f"Path: {path}")
         print(f"Type: {cleanup_type}")
-        print(f"Mode: {'DRY RUN' if dry_run else 'CLEAN'}")
+        print("Mode: analysis only (nothing is deleted)")
         print(f"{'='*60}\n")
 
         from diskcleaner.core import SmartCleanupEngine
@@ -115,16 +115,12 @@ class CleanupScheduler:
         summary = engine.get_summary(report)
         print(summary)
 
-        if not dry_run:
-            print("\n[!] Actual cleanup not yet implemented in scheduler mode")
-            print("   Use --force to enable (coming soon)")
-
         # Update last run time
         task["last_run"] = datetime.now().isoformat()
         task["next_run"] = self._calculate_next_run(task["schedule"])
         self._save_tasks(self.tasks)
 
-    def run_due_tasks(self, dry_run: bool = True):
+    def run_due_tasks(self):
         """Run all tasks that are due."""
         now = datetime.now()
         due_tasks = []
@@ -145,7 +141,7 @@ class CleanupScheduler:
 
         for task in due_tasks:
             try:
-                self.run_task(task, dry_run=dry_run)
+                self.run_task(task)
             except Exception as e:
                 print(f"Error running task '{task['name']}': {e}")
 
@@ -209,10 +205,7 @@ def main():
     remove_parser.add_argument("name", help="Task name to remove")
 
     # Run tasks
-    run_parser = subparsers.add_parser("run", help="Run due tasks")
-    run_parser.add_argument(
-        "--force", action="store_true", help="Actually delete files (disables dry-run)"
-    )
+    subparsers.add_parser("run", help="Analyze the folders of due tasks (never deletes)")
 
     args = parser.parse_args()
 
@@ -239,8 +232,7 @@ def main():
         print(f"[OK] Task '{args.name}' removed")
 
     elif args.command == "run":
-        dry_run = not args.force
-        scheduler.run_due_tasks(dry_run=dry_run)
+        scheduler.run_due_tasks()
 
     return 0
 

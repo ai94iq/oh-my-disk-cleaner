@@ -7,9 +7,9 @@ from pathlib import Path
 SCRIPTS = Path(__file__).resolve().parent.parent / "skills" / "disk-cleaner" / "scripts"
 
 
-def help_text(script: str) -> str:
+def help_text(script: str, *command: str) -> str:
     result = subprocess.run(
-        [sys.executable, str(SCRIPTS / script), "--help"],
+        [sys.executable, str(SCRIPTS / script), *command, "--help"],
         capture_output=True,
         text=True,
         timeout=60,
@@ -20,6 +20,11 @@ def help_text(script: str) -> str:
 
 def test_scheduler_has_no_install_command():
     assert "install" not in help_text("scheduler.py")
+
+
+def test_scheduler_run_has_no_force_flag():
+    # Scheduled tasks only analyze; --force never deleted anything
+    assert "--force" not in help_text("scheduler.py", "run")
 
 
 def test_check_skill_has_no_fix_flag():

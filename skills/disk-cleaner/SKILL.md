@@ -84,7 +84,7 @@ application folders by hand.
 | `monitor_disk.py` | Free-space thresholds per drive | `--warning`, `--critical`, `--watch` |
 | `organize_files.py` | Sort a folder into subfolders | `--strategy`, `--preview`, `--execute` |
 | `interactive_wizard.py` | Guided cleanup in the terminal (needs a human at the keyboard) | `path` |
-| `scheduler.py` | Saved cleanup tasks, dry run unless `run --force` | `add`, `list`, `remove`, `run` |
+| `scheduler.py` | Saved folders to re-analyze on a schedule; reports only, never deletes | `add`, `list`, `remove`, `run` |
 | `check_skill.py` | Self-test of this skill folder | none |
 | `qq_cleanup_macos.zsh` | QQ pictures and emoji cache on macOS | see [QQ cleanup](references/qq_cleanup_macos.md) |
 
