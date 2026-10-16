@@ -35,19 +35,10 @@ try:
         ProgressBar = None
 
 except Exception as e:
-    # If bootstrap module also fails, try direct import (may be installed)
-    try:
-        from diskcleaner.core.progress import ProgressBar
-
-        PROGRESS_AVAILABLE = True
-        print(f"[Warning] Skill bootstrap failed, using installed version: {e}", file=sys.stderr)
-    except ImportError:
-        PROGRESS_AVAILABLE = False
-        ProgressBar = None
-        print(
-            f"[Warning] Cannot import diskcleaner module, some features unavailable: {e}",
-            file=sys.stderr,
-        )
+    # Only the bundled package is trusted; never fall back to an installed one
+    PROGRESS_AVAILABLE = False
+    ProgressBar = None
+    print(f"[Warning] Cannot import the bundled diskcleaner package: {e}", file=sys.stderr)
 
 # Protection rules live in the package; without them nothing may be deleted,
 # so a failed import stops the script here.
