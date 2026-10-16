@@ -109,3 +109,20 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "if typing.TYPE_CHECKING:",
 ]
+
+# Windows bundle: briefcase create windows && briefcase build windows
+# The version must stay equal to __version__ in apps/diskcleaner_gui/__init__.py.
+[tool.briefcase]
+project_name = "Disk Cleaner"
+bundle = "io.github.ai94iq"
+version = "0.1.0"
+url = "https://github.com/ai94iq/oh-my-disk-cleaner"
+license.file = "LICENSE"
+author = "Abdulwahb Isam"
+author_email = "abdoi94.iq@gmail.com"
+
+[tool.briefcase.app.diskcleaner_gui]
+formal_name = "Disk Cleaner"
+description = "Find what fills a disk, preview a cleanup, and list duplicate files"
+sources = ["apps/diskcleaner_gui", "skills/disk-cleaner"]
+requires = ["toga>=0.5.7"]
