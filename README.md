@@ -69,6 +69,7 @@ lists every script with its key flags, and the workflow an agent follows.
 ## Safety
 
 - Nothing is deleted without `--force` (or `YES` in the wizard).
+- Browser history is cleaned only when asked for with `--browser-history`.
 - Filesystem roots, the home folder, system folders and executables,
   installers and disk images are protected by one shared check,
   `is_protected` in `diskcleaner/core/safety.py`. Config files can add

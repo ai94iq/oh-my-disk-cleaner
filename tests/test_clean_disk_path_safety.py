@@ -99,6 +99,43 @@ def test_user_config_adds_protected_paths(clean_disk, tmp_path, monkeypatch):
     assert cleaner._is_safe_to_delete(tmp_path / "cache" / "other.tmp") is True
 
 
+def windows_cleaner(clean_disk, tmp_path, monkeypatch):
+    for name in ("History", "WebCache"):
+        (tmp_path / "Local" / "Microsoft" / "Windows" / name).mkdir(parents=True)
+    monkeypatch.setenv("LOCALAPPDATA", str(tmp_path / "Local"))
+    cleaner = clean_disk.DiskCleaner(show_progress=False)
+    cleaner.system = "windows"
+    return cleaner
+
+
+def test_browser_history_is_its_own_opt_in_category(clean_disk, tmp_path, monkeypatch):
+    cleaner = windows_cleaner(clean_disk, tmp_path, monkeypatch)
+    locations = cleaner.get_cleanable_locations()
+    history = [p for p in locations["browser_history"]]
+
+    assert any(p.endswith("History") for p in history)
+    assert any(p.endswith("WebCache") for p in history)
+    for name, paths in locations.items():
+        if name != "browser_history":
+            assert not any(p.endswith(("History", "WebCache")) for p in paths), name
+
+    categories = [c["category"] for c in cleaner.clean_all(show_progress=False)["categories"]]
+    assert "browser_history" not in categories
+
+
+def test_browser_history_flag_runs_only_that_category(tmp_path):
+    result = subprocess.run(
+        [sys.executable, str(SCRIPT), "--browser-history", "--json", "--no-progress"],
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, result.stderr
+    report = json.loads(result.stdout)
+    assert [c["category"] for c in report["categories"]] == ["browser_history"]
+    assert report["dry_run"] is True
+
+
 def test_locations_hold_no_always_refused_system_folders(clean_disk, cleaner):
     # Folders under %SystemRoot% are protected, so listing them only adds errors
     system_root = os.path.normcase(os.environ.get("SystemRoot", "C:\\Windows"))

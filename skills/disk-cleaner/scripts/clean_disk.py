@@ -243,7 +243,15 @@ class DiskCleaner:
 
     def get_cleanable_locations(self) -> Dict[str, List[str]]:
         """Get platform-specific locations that can be cleaned"""
-        locations = {"temp": [], "cache": [], "logs": [], "recycle": [], "downloads_old": []}
+        # browser_history is opt-in (--browser-history) and never part of clean_all
+        locations = {
+            "temp": [],
+            "cache": [],
+            "logs": [],
+            "recycle": [],
+            "downloads_old": [],
+            "browser_history": [],
+        }
 
         if self.system == "windows":
             # Temp directories
@@ -290,8 +298,9 @@ class DiskCleaner:
             ]
             locations["cache"].extend(self._deduplicate_paths(cache_dirs))
 
-            # Windows specific
-            locations["logs"].extend(
+            # Browser history and the legacy IE/Edge web cache database: user data,
+            # cleaned only on request
+            locations["browser_history"].extend(
                 [
                     os.path.join(
                         os.environ.get("LOCALAPPDATA", ""), "Microsoft", "Windows", "History"
@@ -529,31 +538,37 @@ class DiskCleaner:
 
         return results
 
-    def clean_log_files(self, show_progress: bool = True) -> Dict:
-        """Clean log files with progress bar"""
-        locations = self.get_cleanable_locations()
-        results = {"category": "logs", "locations": []}
+    def _clean_category(
+        self, category: str, pattern: str, older_than_days: int, show_progress: bool
+    ) -> Dict:
+        """Clean every location of one category, items older than the given age."""
+        directories = self.get_cleanable_locations().get(category, [])
+        results = {"category": category, "locations": []}
 
-        log_dirs = locations.get("logs", [])
-
-        if self.show_progress and show_progress and len(log_dirs) > 0:
-            progress = ProgressBar(len(log_dirs), prefix="Cleaning logs")
+        if self.show_progress and show_progress and len(directories) > 0:
+            progress = ProgressBar(len(directories), prefix=f"Cleaning {category}")
         else:
             progress = None
 
-        for log_dir in log_dirs:
+        for directory in directories:
             result = self.clean_directory(
-                log_dir, older_than_days=30, pattern="*.log", show_progress=False
+                directory, older_than_days=older_than_days, pattern=pattern, show_progress=False
             )
             results["locations"].append(result)
-
             if progress:
-                progress.update(1, Path(log_dir).name)
+                progress.update(1, Path(directory).name)
 
         if progress:
             progress.close()
-
         return results
+
+    def clean_log_files(self, show_progress: bool = True) -> Dict:
+        """Clean log files older than 30 days"""
+        return self._clean_category("logs", "*.log", 30, show_progress)
+
+    def clean_browser_history(self, show_progress: bool = True) -> Dict:
+        """Opt-in: clean browser history and web cache entries older than 30 days"""
+        return self._clean_category("browser_history", "*", 30, show_progress)
 
     def clean_recycle_bin(self, show_progress: bool = True) -> Dict:
         """Clean recycle bin/trash with progress bar"""
@@ -718,6 +733,12 @@ Examples:
     parser.add_argument("--logs", action="store_true", help="Clean only logs")
     parser.add_argument("--recycle", action="store_true", help="Clean only recycle bin")
     parser.add_argument(
+        "--browser-history",
+        action="store_true",
+        help="Clean only browser history and the legacy web cache, entries older than 30 "
+        "days (opt-in, never part of the default run)",
+    )
+    parser.add_argument(
         "--downloads", type=int, metavar="DAYS", help="Clean downloads older than N days"
     )
     parser.add_argument(
@@ -808,6 +829,12 @@ Examples:
             "timestamp": datetime.now().isoformat(),
             "dry_run": dry_run,
             "categories": [cleaner.clean_recycle_bin()],
+        }
+    elif args.browser_history:
+        results = {
+            "timestamp": datetime.now().isoformat(),
+            "dry_run": dry_run,
+            "categories": [cleaner.clean_browser_history()],
         }
     elif args.downloads:
         results = {

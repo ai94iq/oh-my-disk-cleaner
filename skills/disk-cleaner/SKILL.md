@@ -63,6 +63,10 @@ Run them; there is nothing to install. Every script prints `--help`.
 2. Show the preview and wait for an explicit yes.
 3. Run the same command with `--force`.
 
+Browser history and the legacy Windows web cache (`History`, `WebCache`)
+are user data and never part of a default run. Offer them separately and
+use `--browser-history` only when the user asks for it.
+
 For a custom folder, `--path` deletes its contents recursively. It accepts
 only junk-named folders (`temp`, `cache`, `logs`, `trash` and similar)
 with no project markers such as `.git` or `package.json`, unless
@@ -78,7 +82,7 @@ application folders by hand.
 |---|---|---|
 | `analyze_disk.py` | Largest folders and files | `--path`, `--top`, `--sample`, `--include-windows`, `--json` |
 | `analyze_progressive.py` | Whole-drive scan with live progress | `--path`, `--max-files`, `--max-seconds`, `--include-windows` |
-| `clean_disk.py` | Temp, cache, log and recycle-bin cleanup | `--temp`, `--cache`, `--logs`, `--recycle`, `--force` |
+| `clean_disk.py` | Temp, cache, log and recycle-bin cleanup | `--temp`, `--cache`, `--logs`, `--recycle`, `--browser-history`, `--force` |
 | `find_duplicates.py` | Duplicate files | `--path`, `--strategy {adaptive,fast,accurate}` |
 | `analyze_growth.py` | Usage snapshots and growth trend | `--capture`, `--history`, `--cleanup DAYS` |
 | `monitor_disk.py` | Free-space thresholds per drive | `--warning`, `--critical`, `--watch` |
