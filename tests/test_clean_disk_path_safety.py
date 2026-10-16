@@ -83,6 +83,22 @@ def test_folder_cleanup_keeps_protected_files_inside(clean_disk, tmp_path):
     assert result["space_freed_mb"] == preview["space_freed_mb"]
 
 
+def test_user_config_adds_protected_paths(clean_disk, tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    keep = tmp_path / "cache" / "keepme"
+    keep.mkdir(parents=True)
+    (home / ".disk-cleaner").mkdir(parents=True)
+    (home / ".disk-cleaner" / "config.yaml").write_text(
+        f"protected:\n  paths: [{keep}]\n", encoding="utf-8"
+    )
+    monkeypatch.setattr(Path, "home", classmethod(lambda cls: home))
+
+    cleaner = clean_disk.DiskCleaner(show_progress=False)
+
+    assert cleaner._is_safe_to_delete(keep / "file.tmp") is False
+    assert cleaner._is_safe_to_delete(tmp_path / "cache" / "other.tmp") is True
+
+
 def test_cache_locations_hold_no_user_data(clean_disk, tmp_path, monkeypatch):
     roaming, local = tmp_path / "Roaming", tmp_path / "Local"
     (roaming / "Mozilla" / "Firefox" / "Profiles" / "abc.default").mkdir(parents=True)

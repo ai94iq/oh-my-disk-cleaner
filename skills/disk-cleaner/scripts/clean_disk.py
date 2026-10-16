@@ -42,7 +42,7 @@ except Exception as e:
 
 # Protection rules live in the package; without them nothing may be deleted,
 # so a failed import stops the script here.
-from diskcleaner.config.defaults import get_protected_extensions, get_protected_paths  # noqa: E402
+from diskcleaner.config import Config  # noqa: E402
 from diskcleaner.core.safety import is_protected, is_root_or_home  # noqa: E402
 
 
@@ -91,9 +91,11 @@ class DiskCleaner:
         self.errors = []
         self.show_progress = show_progress and PROGRESS_AVAILABLE and sys.stdout.isatty()
 
-        # Safety: paths and extensions never deleted (shared defaults)
-        self.protected_paths = get_protected_paths()
-        self.protected_extensions = get_protected_extensions()
+        # Safety: paths and extensions never deleted. ~/.disk-cleaner/config.yaml
+        # may add to them; is_protected always applies the built-in ones too.
+        config = Config.load()
+        self.protected_paths = config.protected_paths
+        self.protected_extensions = config.protected_extensions
 
     def _is_safe_to_delete(self, path: Path) -> bool:
         """Check if a path is safe to delete"""
