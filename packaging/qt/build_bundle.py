@@ -7,6 +7,7 @@ versions), this project, PyInstaller with packaging/qt/app.spec (build files go 
 OUT_DIR/.build, never the repo), the bundle's own --self-check (exit 0, both themes, the service),
 then the pack: DiskCleaner-<version>-windows-x64.exe, -linux-x64.tar.gz or -macos-<arch>.dmg.
 """
+
 import argparse
 import ast
 import importlib.metadata
@@ -21,15 +22,18 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 NAME = "DiskCleaner"
-TOOLS = ["pyinstaller==6.22.3", "pillow==12.3.0"]     # pinned for repeatable bundles; bump on purpose
+TOOLS = ["pyinstaller==6.22.3", "pillow==12.3.0"]  # pinned for repeatable bundles; bump on purpose
 REQUIRED = ["theme dark: ok", "service: ok"]
 
 
 def version():
     path = os.path.join(ROOT, "apps", "diskcleaner_gui", "__init__.py")
     tree = ast.parse(open(path, encoding="utf-8").read())
-    return next(n.value.value for n in tree.body
-                if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "__version__")
+    return next(
+        n.value.value
+        for n in tree.body
+        if isinstance(n, ast.Assign) and getattr(n.targets[0], "id", "") == "__version__"
+    )
 
 
 def pip(*args):
@@ -55,8 +59,10 @@ def self_check(dist):
     """Runs the built bundle headless: a broken bundle fails here, not on a user's machine."""
     with tempfile.TemporaryDirectory() as work:
         report = os.path.join(work, "self-check.txt")
-        code = subprocess.run([executable(dist), "--self-check", report],
-                              env=dict(os.environ, QT_QPA_PLATFORM="offscreen")).returncode
+        code = subprocess.run(
+            [executable(dist), "--self-check", report],
+            env=dict(os.environ, QT_QPA_PLATFORM="offscreen"),
+        ).returncode
         text = open(report, encoding="utf-8").read() if os.path.exists(report) else ""
     print(text)
     if code or not all(r in text for r in REQUIRED):
@@ -72,8 +78,21 @@ def pack(out, dist):
     elif sys.platform == "darwin":
         arch = "arm64" if platform.machine() == "arm64" else "x64"
         target = os.path.join(out, f"{stem}-macos-{arch}.dmg")
-        subprocess.run(["hdiutil", "create", "-volname", "Disk Cleaner", "-srcfolder",
-                        os.path.join(dist, f"{NAME}.app"), "-ov", "-format", "UDZO", target], check=True)
+        subprocess.run(
+            [
+                "hdiutil",
+                "create",
+                "-volname",
+                "Disk Cleaner",
+                "-srcfolder",
+                os.path.join(dist, f"{NAME}.app"),
+                "-ov",
+                "-format",
+                "UDZO",
+                target,
+            ],
+            check=True,
+        )
     else:
         target = os.path.join(out, f"{stem}-linux-x64.tar.gz")
         with tarfile.open(target, "w:gz") as tar:
@@ -83,19 +102,41 @@ def pack(out, dist):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
     parser.add_argument("out")
-    parser.add_argument("--no-install", action="store_true", help="never pip install (default: only when needed)")
+    parser.add_argument(
+        "--no-install", action="store_true", help="never pip install (default: only when needed)"
+    )
     args = parser.parse_args(argv)
     out = os.path.abspath(args.out)
     work, dist = os.path.join(out, ".build", "work"), os.path.join(out, ".build", "dist")
     if not args.no_install and not tools_ready():
         pip("install", "-q", "-U", "pip", *TOOLS)
     if not args.no_install:
-        pip("install", "-q", "-e", ROOT) if importlib.util.find_spec("diskcleaner_gui") is None else None
-    subprocess.run([sys.executable, "-m", "PyInstaller", "--noconfirm", "--log-level", "WARN",
-                    "--workpath", work, "--distpath", dist,
-                    os.path.join(ROOT, "packaging", "qt", "app.spec")], check=True, cwd=ROOT)
+        (
+            pip("install", "-q", "-e", ROOT)
+            if importlib.util.find_spec("diskcleaner_gui") is None
+            else None
+        )
+    subprocess.run(
+        [
+            sys.executable,
+            "-m",
+            "PyInstaller",
+            "--noconfirm",
+            "--log-level",
+            "WARN",
+            "--workpath",
+            work,
+            "--distpath",
+            dist,
+            os.path.join(ROOT, "packaging", "qt", "app.spec"),
+        ],
+        check=True,
+        cwd=ROOT,
+    )
     self_check(dist)
     pack(out, dist)
     return 0

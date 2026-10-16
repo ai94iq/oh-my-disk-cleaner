@@ -1,4 +1,5 @@
 """Slow work off the UI thread: a queued job worker, a coalesced refresh, and a newest-value-only handoff."""
+
 import itertools
 import threading
 import time
@@ -14,10 +15,10 @@ class Worker(QObject):
     (a direct connection, a cache hit) finds its row. Everything that touches one slow resource (a device,
     a socket, a database file) goes through one worker, so calls never interleave."""
 
-    request = Signal(int, object)      # (job id, callable)
-    finished = Signal(int, object)     # (job id, result)
-    failed = Signal(int, str)          # (job id, error text)
-    timed = Signal(int, float)         # (job id, seconds the call took): measure, never guess, latency
+    request = Signal(int, object)  # (job id, callable)
+    finished = Signal(int, object)  # (job id, result)
+    failed = Signal(int, str)  # (job id, error text)
+    timed = Signal(int, float)  # (job id, seconds the call took): measure, never guess, latency
     poll = Signal()
     refreshed = Signal(object)
 
@@ -42,7 +43,7 @@ class Worker(QObject):
         start = time.perf_counter()
         try:
             result = call()
-        except Exception as err:       # a job failure is shown to the user, never raised into Qt
+        except Exception as err:  # a job failure is shown to the user, never raised into Qt
             self.failed.emit(job, str(err) or type(err).__name__)
         else:
             self.finished.emit(job, result)

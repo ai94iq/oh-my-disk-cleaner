@@ -9,13 +9,12 @@ import pytest
 pytest.importorskip("PySide6")
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+from diskcleaner_gui import service as real  # noqa: E402
+from gui_fakes import FakeService  # noqa: E402
 from PySide6.QtCore import QEvent, QObject, QPoint, QSettings, Qt, Signal  # noqa: E402
 from PySide6.QtGui import QIcon  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
 from PySide6.QtWidgets import QApplication, QMenu, QStyle, QToolTip  # noqa: E402
-
-from diskcleaner_gui import service as real  # noqa: E402
-from gui_fakes import FakeService  # noqa: E402
 
 
 class FakeWorker(QObject):
@@ -191,7 +190,7 @@ class TemplateInvariants(QtCase):
     def test_the_target_pill_works_from_the_keyboard(self):
         pill = self.window.pill
         self.assertEqual(pill.focusPolicy(), Qt.FocusPolicy.TabFocus)
-        self.assertEqual(pill.accessibleName(), "Target: C:\  400 B free")
+        self.assertEqual(pill.accessibleName(), "Target: C:\\  400 B free")
         opened = []
         pill.clicked.disconnect()  # the real menu's exec() would block the test
         pill.clicked.connect(lambda: opened.append(1))
@@ -344,7 +343,6 @@ class Cleanup(QtCase):
         self.assertEqual(self.window.status.property("tone"), "ok")
         self.assertFalse(self.window.clean_action.isEnabled())  # a new preview comes first
 
-
     def test_the_confirm_names_the_deletion_and_defaults_to_keeping_files(self):
         box = self.window.confirm_box("Delete 3 items?", "Temporary files: 3 items, 300 B")
         self.assertEqual(box.defaultButton().text(), "Keep files")
@@ -358,7 +356,7 @@ class Cleanup(QtCase):
         self.service.calls.clear()
         self.window.previewed = (
             {"recycle"},
-            real.CleanReport(True, [real.CleanRow("recycle", "C:\$Recycle.Bin", 2, 50, [])]),
+            real.CleanReport(True, [real.CleanRow("recycle", "C:\\$Recycle.Bin", 2, 50, [])]),
         )
         self.window.set_ticked("temp", False)
         self.window.set_ticked("cache", False)

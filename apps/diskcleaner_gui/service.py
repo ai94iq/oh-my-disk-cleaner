@@ -29,6 +29,7 @@ import analyze_progressive  # noqa: E402
 import clean_disk  # noqa: E402
 import find_duplicates as _find_duplicates  # noqa: E402
 import monitor_disk  # noqa: E402
+
 from diskcleaner.core.units import format_size  # noqa: E402,F401
 
 CATEGORIES = {

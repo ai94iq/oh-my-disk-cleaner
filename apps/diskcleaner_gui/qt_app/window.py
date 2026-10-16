@@ -236,10 +236,15 @@ class MainWindow(QMainWindow):
             ["Name", "Size", "Path"], "analyze", "No scan yet", "Files over 10 MB show here."
         )
         self.analyze_action = self._action(
-            "Analyze", "analyze", "Analyze\nScans the target; Stop keeps what it found", self.analyze
+            "Analyze",
+            "analyze",
+            "Analyze\nScans the target; Stop keeps what it found",
+            self.analyze,
         )
         self.stop_action = self._action("Stop", "stop", "Stop\nEnds the scan early", self.stop)
-        split = self._split(self._pane("Largest folders", folders), self._pane("Largest files", files))
+        split = self._split(
+            self._pane("Largest folders", folders), self._pane("Largest files", files)
+        )
         return self._page(split, self._action_bar(self.analyze_action, self.stop_action))
 
     def _clean_page(self):
@@ -262,10 +267,16 @@ class MainWindow(QMainWindow):
         self.total = plain_label("", "chip")
         self.total.hide()
         self.preview_action = self._action(
-            "Preview", "preview", "Preview\nCounts what Clean would remove; deletes nothing", self.run_preview
+            "Preview",
+            "preview",
+            "Preview\nCounts what Clean would remove; deletes nothing",
+            self.run_preview,
         )
         self.clean_action = self._action(
-            "Clean", "clean", "Clean\nDeletes what the preview listed, after you confirm", self.run_clean
+            "Clean",
+            "clean",
+            "Clean\nDeletes what the preview listed, after you confirm",
+            self.run_clean,
         )
         split = self._split(
             self._pane("What to clean", self.categories), self._pane("Preview", preview, self.total)
@@ -285,7 +296,9 @@ class MainWindow(QMainWindow):
         self.find_action = self._action(
             "Find", "find", "Find\nLooks for duplicate files under the target", self.find
         )
-        split = self._split(self._pane("Duplicate groups", groups), self._pane("Copies", self.copies))
+        split = self._split(
+            self._pane("Duplicate groups", groups), self._pane("Copies", self.copies)
+        )
         return self._page(split, self._action_bar(self.find_action))
 
     def showEvent(self, event):
@@ -346,7 +359,9 @@ class MainWindow(QMainWindow):
         self.pill.dot.setPixmap(dot_pixmap(self.t["ok"], 8, ratio=ratio))
         self.pill.text.setText(self._label(self.target))
         self.pill.setProperty("menu", True)  # there is always Choose folder...
-        self.pill.chevron.setPixmap(icon("chevron-down", self.t["ink2"]).pixmap(QSize(14, 14), ratio))
+        self.pill.chevron.setPixmap(
+            icon("chevron-down", self.t["ink2"]).pixmap(QSize(14, 14), ratio)
+        )
         self.pill.setCursor(Qt.CursorShape.PointingHandCursor)
         self.pill.setToolTip(f"{self.target}\nTarget of Analyze and Duplicates; click to switch")
         self.pill.setAccessibleName(f"Target: {self._label(self.target)}")
@@ -462,7 +477,9 @@ class MainWindow(QMainWindow):
         self._fill(self.folders, [(e.name, size(e.size), e.path) for e in result.folders])
         self._fill(self.files, [(e.name, size(e.size), e.path) for e in result.files])
         if result.stop_reason:
-            self._say(f"Stopped: {result.stop_reason}; {plural(result.files_scanned, 'file')}", page=0)
+            self._say(
+                f"Stopped: {result.stop_reason}; {plural(result.files_scanned, 'file')}", page=0
+            )
         else:
             self._say(f"{plural(result.files_scanned, 'file')} in {result.seconds} s", page=0)
 
@@ -489,7 +506,9 @@ class MainWindow(QMainWindow):
         def call():
             return chosen, self.service.clean(sorted(chosen), dry_run=True)
 
-        return self._submit("preview", call, "Counting what Clean would remove; this can take minutes")
+        return self._submit(
+            "preview", call, "Counting what Clean would remove; this can take minutes"
+        )
 
     def _show_preview(self, result):
         chosen, report = result
@@ -564,7 +583,9 @@ class MainWindow(QMainWindow):
         if self.busy:
             return None
         target = self.target
-        return self._submit("dups", lambda: self.service.duplicates(target), f"Looking for duplicates in {target}")
+        return self._submit(
+            "dups", lambda: self.service.duplicates(target), f"Looking for duplicates in {target}"
+        )
 
     def _show_dups(self, groups):
         size = self.service.format_size
@@ -575,7 +596,11 @@ class MainWindow(QMainWindow):
         )
         self.copies.clear()
         total = sum(g.reclaimable for g in groups)
-        text = f"{plural(len(groups), 'group')}; {size(total)} reclaimable" if groups else "No duplicates"
+        text = (
+            f"{plural(len(groups), 'group')}; {size(total)} reclaimable"
+            if groups
+            else "No duplicates"
+        )
         self._say(text, page=2)
 
     def _show_copies(self):

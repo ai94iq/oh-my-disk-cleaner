@@ -4,7 +4,6 @@ import threading
 from pathlib import Path
 
 import pytest
-
 from diskcleaner_gui import service
 
 
@@ -85,4 +84,3 @@ def test_drives_nonempty():
 def test_browser_history_is_not_default():
     assert "browser_history" in service.CATEGORIES
     assert "browser_history" not in service.DEFAULT_CATEGORIES
-

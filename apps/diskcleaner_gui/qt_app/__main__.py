@@ -1,18 +1,22 @@
 """Starts Disk Cleaner.
 
-    python -m diskcleaner_gui.qt_app                       open the window
-    python -m diskcleaner_gui.qt_app --theme dark          start in a theme (system, light, dark) without saving it
-    python -m diskcleaner_gui.qt_app --self-check REPORT   build the window offscreen, write a report, exit 0 when sound
-    python -m diskcleaner_gui.qt_app --screenshots DIR     light and dark screenshots plus review.html, for a visual review
+python -m diskcleaner_gui.qt_app                       open the window
+python -m diskcleaner_gui.qt_app --theme dark          start in a theme (system, light, dark) without saving it
+python -m diskcleaner_gui.qt_app --self-check REPORT   build the window offscreen, write a report, exit 0 when sound
+python -m diskcleaner_gui.qt_app --screenshots DIR     light and dark screenshots plus review.html, for a visual review
 """
+
 import argparse
 import os
 import sys
 
 
 def parse(argv):
-    parser = argparse.ArgumentParser(prog="diskcleaner_gui.qt_app", description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        prog="diskcleaner_gui.qt_app",
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--theme", choices=("system", "light", "dark"))
     parser.add_argument("--self-check", metavar="REPORT")
     parser.add_argument("--screenshots", metavar="DIR")
@@ -52,9 +56,7 @@ def screenshots(folder):
 
     from PySide6.QtCore import QSettings
 
-    from .window import MainWindow
-
-    from .window import load_service
+    from .window import MainWindow, load_service
 
     real = load_service()
 
@@ -112,7 +114,7 @@ def screenshots(folder):
 
 def main(argv=None):
     args = parse(sys.argv[1:] if argv is None else argv)
-    if args.self_check:           # no display needed; --screenshots needs one, offscreen Qt has no fonts
+    if args.self_check:  # no display needed; --screenshots needs one, offscreen Qt has no fonts
         os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
     try:
         from PySide6.QtWidgets import QApplication
@@ -128,6 +130,7 @@ def main(argv=None):
         return 0
     from .window import MainWindow
     from .worker import start, stop
+
     window = MainWindow()
     if args.theme:
         window.set_theme(args.theme, save=False)

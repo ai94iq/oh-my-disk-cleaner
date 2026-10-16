@@ -1,4 +1,5 @@
 """Light and dark themes from one set of design tokens: Fusion style, a palette and one stylesheet."""
+
 from PySide6.QtCore import QEvent, QObject, Qt
 from PySide6.QtGui import QColor, QPalette
 from PySide6.QtWidgets import QMenu, QProxyStyle, QStyle, QWidget
@@ -9,18 +10,60 @@ from .icons import chevrons
 # ground: window background; panel: cards; raised: inputs and pills; ink/ink2/ink3: text, secondary, hint.
 # Light lifts cards on a shadow; dark lifts them on a crisp top edge (shadows vanish on a dark ground).
 THEMES = {
-    "light": {"ground": "#e9ecf1", "panel": "#ffffff", "raised": "#f4f6f9", "hover": "#eceff4", "line": "#d6dae3",
-              "ink": "#0f1216", "ink2": "#5a6372", "ink3": "#757d8c", "accent": "#4361ee", "accent_soft": "#e4e9fd",
-              "accent_text": "#3a56d9", "accent_ink": "#ffffff", "bad": "#e5484d", "bad_soft": "#fde4e5",
-              "bad_text": "#b4232a",
-              "ok": "#137538", "ok_soft": "#dcf5e5", "warn": "#a14a06", "warn_soft": "#fdebd0", "select": "#4361ee",
-              "shadow_alpha": 70, "shadow_blur": 28, "shadow_y": 6, "edge": "transparent", "card_line": "transparent"},
-    "dark": {"ground": "#050608", "panel": "#181c24", "raised": "#20252f", "hover": "#2a303c", "line": "#303746",
-             "ink": "#f5f7fa", "ink2": "#a3acba", "ink3": "#7d8696", "accent": "#7b93ff", "accent_soft": "#252d4d",
-             "accent_text": "#7b93ff", "accent_ink": "#0d0f13", "bad": "#ff6369", "bad_soft": "#3a1d20",
-             "bad_text": "#ff6369",
-             "ok": "#3ecf8e", "ok_soft": "#16342a", "warn": "#f5b14c", "warn_soft": "#3b2d14", "select": "#7b93ff",
-             "shadow_alpha": 0, "shadow_blur": 44, "shadow_y": 12, "edge": "#3d4555", "card_line": "#303746"},
+    "light": {
+        "ground": "#e9ecf1",
+        "panel": "#ffffff",
+        "raised": "#f4f6f9",
+        "hover": "#eceff4",
+        "line": "#d6dae3",
+        "ink": "#0f1216",
+        "ink2": "#5a6372",
+        "ink3": "#757d8c",
+        "accent": "#4361ee",
+        "accent_soft": "#e4e9fd",
+        "accent_text": "#3a56d9",
+        "accent_ink": "#ffffff",
+        "bad": "#e5484d",
+        "bad_soft": "#fde4e5",
+        "bad_text": "#b4232a",
+        "ok": "#137538",
+        "ok_soft": "#dcf5e5",
+        "warn": "#a14a06",
+        "warn_soft": "#fdebd0",
+        "select": "#4361ee",
+        "shadow_alpha": 70,
+        "shadow_blur": 28,
+        "shadow_y": 6,
+        "edge": "transparent",
+        "card_line": "transparent",
+    },
+    "dark": {
+        "ground": "#050608",
+        "panel": "#181c24",
+        "raised": "#20252f",
+        "hover": "#2a303c",
+        "line": "#303746",
+        "ink": "#f5f7fa",
+        "ink2": "#a3acba",
+        "ink3": "#7d8696",
+        "accent": "#7b93ff",
+        "accent_soft": "#252d4d",
+        "accent_text": "#7b93ff",
+        "accent_ink": "#0d0f13",
+        "bad": "#ff6369",
+        "bad_soft": "#3a1d20",
+        "bad_text": "#ff6369",
+        "ok": "#3ecf8e",
+        "ok_soft": "#16342a",
+        "warn": "#f5b14c",
+        "warn_soft": "#3b2d14",
+        "select": "#7b93ff",
+        "shadow_alpha": 0,
+        "shadow_blur": 44,
+        "shadow_y": 12,
+        "edge": "#3d4555",
+        "card_line": "#303746",
+    },
 }
 THEME_MODES = ("system", "light", "dark")
 THEME_ICONS = {"system": "monitor", "light": "sun", "dark": "moon"}
@@ -32,7 +75,7 @@ def theme_name(app, mode="system"):
         return mode
     try:
         return "dark" if app.styleHints().colorScheme() == Qt.ColorScheme.Dark else "light"
-    except AttributeError:             # Qt before 6.5
+    except AttributeError:  # Qt before 6.5
         return "light"
 
 
@@ -115,7 +158,7 @@ QMenu::indicator {{ width: 0; }}
 QToolTip {{ background: {raised}; color: {ink}; border: 1px solid {line}; border-radius: 6px; padding: 4px 8px; }}
 """
 
-TIP_DELAY = 50                 # ms before a tooltip shows; Qt's default of 700 reads as lag
+TIP_DELAY = 50  # ms before a tooltip shows; Qt's default of 700 reads as lag
 
 
 class AppStyle(QProxyStyle):
@@ -129,14 +172,21 @@ class AppStyle(QProxyStyle):
 
 class SurfaceFilter(QObject):
     """Menus and tooltips are popup windows: make them frameless and see-through before they show, so only the
-    stylesheet's rounded surface is drawn and not a square window behind it (the "two backgrounds" look)."""
+    stylesheet's rounded surface is drawn and not a square window behind it (the "two backgrounds" look).
+    """
 
     def eventFilter(self, obj, event):
-        if event.type() == QEvent.Type.Polish and isinstance(obj, QWidget) and (
-                isinstance(obj, QMenu) or obj.metaObject().className() == "QTipLabel"):
+        if (
+            event.type() == QEvent.Type.Polish
+            and isinstance(obj, QWidget)
+            and (isinstance(obj, QMenu) or obj.metaObject().className() == "QTipLabel")
+        ):
             if not obj.testAttribute(Qt.WidgetAttribute.WA_TranslucentBackground):
-                obj.setWindowFlags(obj.windowFlags() | Qt.WindowType.FramelessWindowHint
-                                   | Qt.WindowType.NoDropShadowWindowHint)
+                obj.setWindowFlags(
+                    obj.windowFlags()
+                    | Qt.WindowType.FramelessWindowHint
+                    | Qt.WindowType.NoDropShadowWindowHint
+                )
                 obj.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         return False
 
@@ -144,31 +194,46 @@ class SurfaceFilter(QObject):
 def apply_theme(app, mode="system"):
     """Themes the whole app (Fusion looks the same on Windows, Linux and macOS); returns the tokens in use."""
     t = dict(THEMES[theme_name(app, mode)])
-    if not hasattr(app, "app_style"):                  # set once; these objects must outlive every call
+    if not hasattr(app, "app_style"):  # set once; these objects must outlive every call
         app.app_style, app.surface_filter = AppStyle("Fusion"), SurfaceFilter(app)
         app.setStyle(app.app_style)
         app.installEventFilter(app.surface_filter)
-        for effect in (Qt.UIEffect.UI_FadeTooltip, Qt.UIEffect.UI_AnimateTooltip):     # no fade on top of the wait
+        for effect in (
+            Qt.UIEffect.UI_FadeTooltip,
+            Qt.UIEffect.UI_AnimateTooltip,
+        ):  # no fade on top of the wait
             app.setEffectEnabled(effect, False)
     p = QPalette()
-    for role, key in ((QPalette.ColorRole.Window, "ground"), (QPalette.ColorRole.Base, "panel"),
-                      (QPalette.ColorRole.AlternateBase, "raised"), (QPalette.ColorRole.Button, "raised"),
-                      (QPalette.ColorRole.Text, "ink"), (QPalette.ColorRole.WindowText, "ink"),
-                      (QPalette.ColorRole.ButtonText, "ink"), (QPalette.ColorRole.Highlight, "accent"),
-                      (QPalette.ColorRole.HighlightedText, "accent_ink"), (QPalette.ColorRole.PlaceholderText, "ink3"),
-                      (QPalette.ColorRole.ToolTipBase, "raised"), (QPalette.ColorRole.ToolTipText, "ink")):
+    for role, key in (
+        (QPalette.ColorRole.Window, "ground"),
+        (QPalette.ColorRole.Base, "panel"),
+        (QPalette.ColorRole.AlternateBase, "raised"),
+        (QPalette.ColorRole.Button, "raised"),
+        (QPalette.ColorRole.Text, "ink"),
+        (QPalette.ColorRole.WindowText, "ink"),
+        (QPalette.ColorRole.ButtonText, "ink"),
+        (QPalette.ColorRole.Highlight, "accent"),
+        (QPalette.ColorRole.HighlightedText, "accent_ink"),
+        (QPalette.ColorRole.PlaceholderText, "ink3"),
+        (QPalette.ColorRole.ToolTipBase, "raised"),
+        (QPalette.ColorRole.ToolTipText, "ink"),
+    ):
         p.setColor(role, QColor(t[key]))
     app.setPalette(p)
-    app.setStyleSheet(QSS.format(**t, **chevrons(t["ink2"]), **chevrons(t["accent_ink"], ("check",))))
+    app.setStyleSheet(
+        QSS.format(**t, **chevrons(t["ink2"]), **chevrons(t["accent_ink"], ("check",)))
+    )
     return t
 
 
 def contrast(fg, bg):
     """WCAG contrast ratio of two colors; text needs 4.5, large text and icons 3."""
+
     def lum(color):
         c = QColor(color)
         parts = [v / 255 for v in (c.red(), c.green(), c.blue())]
         r, g, b = [v / 12.92 if v <= 0.03928 else ((v + 0.055) / 1.055) ** 2.4 for v in parts]
         return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
     hi, lo = sorted((lum(fg), lum(bg)), reverse=True)
     return (hi + 0.05) / (lo + 0.05)

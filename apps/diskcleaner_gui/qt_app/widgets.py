@@ -1,8 +1,17 @@
 """Building blocks: plain labels, empty states, cards with shadows, the target pill and a segmented switch."""
+
 from PySide6.QtCore import QSize, Qt, Signal
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QHBoxLayout, QLabel, QSizePolicy, QToolButton,
-                               QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (
+    QFrame,
+    QGraphicsDropShadowEffect,
+    QHBoxLayout,
+    QLabel,
+    QSizePolicy,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+)
 
 from .icons import ICON_SIZE, icon
 
@@ -43,10 +52,14 @@ class EmptyState(QWidget):
 
     def retheme(self, theme):
         self.t = theme
-        self.icon.setPixmap(icon(self.name, theme["ink3"]).pixmap(QSize(32, 32), self.devicePixelRatioF()))
+        self.icon.setPixmap(
+            icon(self.name, theme["ink3"]).pixmap(QSize(32, 32), self.devicePixelRatioF())
+        )
 
 
-SHADOW_ROOM = 14       # px around a card for its shadow; the bottom gets twice that (the shadow falls down)
+SHADOW_ROOM = (
+    14  # px around a card for its shadow; the bottom gets twice that (the shadow falls down)
+)
 
 
 def card(widget, theme):
@@ -78,7 +91,7 @@ def floating(frame, theme):
 def shade(frame, theme):
     """(Re)applies the theme's shadow; call it for every card on a theme change."""
     effect = frame.graphicsEffect()
-    effect.setEnabled(theme["shadow_alpha"] > 0)       # dark cards use an edge instead
+    effect.setEnabled(theme["shadow_alpha"] > 0)  # dark cards use an edge instead
     effect.setColor(QColor(0, 0, 0, theme["shadow_alpha"]))
     effect.setBlurRadius(theme["shadow_blur"])
     effect.setOffset(0, theme["shadow_y"])
@@ -92,7 +105,9 @@ class Pill(QFrame):
     def __init__(self):
         super().__init__()
         self.setObjectName("pill")
-        self.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)     # a toolbar would stretch it
+        self.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed
+        )  # a toolbar would stretch it
         row = QHBoxLayout(self)
         row.setContentsMargins(10, 4, 12, 4)
         row.setSpacing(6)
@@ -100,17 +115,19 @@ class Pill(QFrame):
         self.text, self.chevron = plain_label("", "state"), plain_label("", "chevron")
         for widget in (self.glyph, self.dot, self.text):
             row.addWidget(widget)
-        row.addStretch(1)              # the pill is as wide as its menu: spare room goes before the chevron
+        row.addStretch(1)  # the pill is as wide as its menu: spare room goes before the chevron
         row.addWidget(self.chevron)
 
-        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)      # Tab reaches it; a click leaves no ring
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)  # Tab reaches it; a click leaves no ring
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and self.property("menu"):
             self.clicked.emit()
 
     def keyPressEvent(self, event):
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space) and self.property("menu"):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space) and self.property(
+            "menu"
+        ):
             self.clicked.emit()
         else:
             super().keyPressEvent(event)
@@ -133,8 +150,11 @@ def tool_button(action, text=True):
     """A flat button for an action: icon beside text, or icon only (then the action's text is its accessible name)."""
     button = QToolButton()
     button.setDefaultAction(action)
-    button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon if text
-                              else Qt.ToolButtonStyle.ToolButtonIconOnly)
+    button.setToolButtonStyle(
+        Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        if text
+        else Qt.ToolButtonStyle.ToolButtonIconOnly
+    )
     button.setIconSize(ICON_SIZE)
     button.setAutoRaise(True)
     button.setAccessibleName(action.text())

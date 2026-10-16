@@ -394,7 +394,11 @@ class DirectoryScanner:
                 self.files_scanned += 1
                 yield file_info
 
-                if is_dir and not is_link and not should_exclude_path(entry.path, self.include_windows):
+                if (
+                    is_dir
+                    and not is_link
+                    and not should_exclude_path(entry.path, self.include_windows)
+                ):
                     enter(entry.path, level + 1)
         finally:
             for it, _ in stack:
