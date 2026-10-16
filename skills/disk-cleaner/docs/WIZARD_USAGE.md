@@ -61,8 +61,10 @@ For each selected path:
 - A link or junction is removed as a link; its target is not touched.
 - Each deletion is logged to `~/.disk-cleaner/logs/cleanup.log`.
 
-Backups are not pruned automatically; delete old dated folders under
-`~/.disk-cleaner/backup/` once the result is confirmed.
+Each new backup removes dated backup folders older than 30 days. Set
+`safety.backup_retention_days` in `~/.disk-cleaner/config.yaml` to keep
+them longer. Backups usually sit on the same disk, so space is freed for
+good only once they are pruned.
 
 ## Configuration
 

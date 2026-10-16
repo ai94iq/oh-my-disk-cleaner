@@ -107,6 +107,8 @@ def get_default_config() -> Dict:
             "check_file_locks": True,
             "verify_permissions": True,
             "backup_before_delete": False,
+            # Dated wizard backup folders older than this are removed
+            "backup_retention_days": 30,
             "protected_extensions": [
                 # Windows executables
                 ".exe",

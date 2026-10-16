@@ -12,7 +12,7 @@ import os
 import platform
 import shutil
 import subprocess
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
@@ -361,12 +361,35 @@ class SafetyChecker:
 
             # Log backup
             self._log_backup(file_path, backup_path)
-
-            return str(backup_path)
-
         except (OSError, IOError):
             # Log error but don't fail
             return None
+
+        self._prune_backups()
+        return str(backup_path)
+
+    def _prune_backups(self) -> None:
+        """
+        Remove dated backup folders older than safety.backup_retention_days.
+
+        Only real folders named YYYY-MM-DD directly in the backup folder are
+        removed; links, junctions and anything else are left alone.
+        """
+        keep_days = int(self.config.get("safety.backup_retention_days", 30))
+        cutoff = datetime.now().date() - timedelta(days=keep_days)
+        is_junction = getattr(os.path, "isjunction", lambda path: False)
+        try:
+            entries = list(self.backup_dir.iterdir())
+        except OSError:
+            return
+        for entry in entries:
+            try:
+                day = datetime.strptime(entry.name, "%Y-%m-%d").date()
+            except ValueError:
+                continue
+            if day >= cutoff or entry.is_symlink() or is_junction(entry) or not entry.is_dir():
+                continue
+            shutil.rmtree(entry, ignore_errors=True)
 
     def _log_backup(self, original: str, backup: str) -> None:
         """

@@ -138,6 +138,27 @@ def test_windows_lock_check_sees_an_open_file(tmp_path):
     assert checker._is_locked(str(target)) is False
 
 
+def test_backups_older_than_retention_are_pruned(tmp_path):
+    from datetime import date, timedelta
+
+    checker = SafetyChecker()
+    checker.backup_dir = tmp_path / "backup"
+    old = checker.backup_dir / "2020-01-01"
+    recent = checker.backup_dir / (date.today() - timedelta(days=5)).isoformat()
+    other = checker.backup_dir / "not-a-date"
+    for folder in (old, recent, other):
+        folder.mkdir(parents=True)
+        (folder / "f.txt").write_text("x", encoding="utf-8")
+    source = tmp_path / "doc.txt"
+    source.write_text("data", encoding="utf-8")
+
+    assert checker.create_backup(str(source))
+
+    assert not old.exists()
+    assert recent.exists()
+    assert other.exists()
+
+
 def test_windows_defaults_follow_environment(monkeypatch):
     monkeypatch.setenv("SystemRoot", r"X:\Win")
     assert r"X:\Win" in get_protected_paths()
