@@ -6,6 +6,7 @@ file lock detection and permission verification. Locked files are reported
 and skipped; this module never terminates processes.
 """
 
+import functools
 import os
 import platform
 import shutil
@@ -18,6 +19,55 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 from diskcleaner.config import Config
 from diskcleaner.config.defaults import get_protected_extensions, get_protected_paths
 from diskcleaner.core.scanner import FileInfo
+
+
+def _identity(path: Union[str, Path]) -> Optional[Tuple[int, int]]:
+    """(device, file id) of an existing path, or None. Same folder, same identity,
+    whatever spelling reaches it (\\\\?\\C:\\..., \\\\localhost\\C$\\..., subst drives)."""
+    try:
+        st = os.stat(path)
+    except (OSError, ValueError):
+        return None
+    return (st.st_dev, st.st_ino) if st.st_ino else None
+
+
+# Parent folders repeat across a scan, so their identities are cached
+_parent_identity = functools.lru_cache(maxsize=8192)(_identity)
+
+
+def _resolve_all(paths: Iterable[Union[str, Path]]) -> List[Path]:
+    """Resolve each non-blank entry; blank entries (a YAML "[]" parses to [""]) are dropped."""
+    resolved = []
+    for entry in paths:
+        if not str(entry).strip():
+            continue
+        try:
+            resolved.append(Path(entry).expanduser().resolve())
+        except (OSError, RuntimeError, ValueError):
+            continue
+    return resolved
+
+
+def _norm(path: Path) -> str:
+    """Case-normalised text of a resolved path, for prefix comparison."""
+    return os.path.normcase(str(path))
+
+
+def _within(path_text: str, protected_text: str) -> bool:
+    """True when path_text is protected_text or inside it, by whole components."""
+    if path_text == protected_text:
+        return True
+    prefix = protected_text if protected_text.endswith(os.sep) else protected_text + os.sep
+    return path_text.startswith(prefix)
+
+
+@functools.lru_cache(maxsize=1)
+def _builtin_protection() -> Tuple[Tuple[str, ...], frozenset, frozenset]:
+    """Built-in protected paths (normalised text), their identities and extensions, once."""
+    paths = _resolve_all(get_protected_paths())
+    identities = frozenset(i for i in map(_identity, paths) if i)
+    extensions = frozenset(ext.lower() for ext in get_protected_extensions())
+    return tuple(map(_norm, paths)), identities, extensions
 
 
 def is_root_or_home(path: Path) -> bool:
@@ -46,9 +96,14 @@ def is_protected(
     built-in ones and can never remove them, so a config file (including a
     .disk-cleaner.yaml inside the folder being cleaned) cannot unprotect
     system paths. A path that cannot be resolved counts as protected.
+
+    Paths are compared twice: by text (works for paths that do not exist yet)
+    and by file identity of the path and each parent (catches other spellings
+    of the same folder, such as \\\\?\\C:\\Windows or \\\\localhost\\C$\\Windows).
     """
-    protected_paths = [*get_protected_paths(), *(protected_paths or [])]
-    protected_extensions = [*get_protected_extensions(), *(protected_extensions or [])]
+    builtin_paths, builtin_ids, builtin_exts = _builtin_protection()
+    extra_paths = _resolve_all(protected_paths or [])
+    extensions = builtin_exts | {ext.lower() for ext in protected_extensions or [] if ext}
 
     try:
         resolved = Path(path).expanduser().resolve()
@@ -57,17 +112,23 @@ def is_protected(
 
     if is_root_or_home(resolved):
         return True
-    if resolved.suffix.lower() in {ext.lower() for ext in protected_extensions}:
+    if resolved.suffix.lower() in extensions:
         return True
 
-    for protected in protected_paths:
-        try:
-            protected_path = Path(protected).expanduser().resolve()
-        except (OSError, RuntimeError, ValueError):
-            continue
-        if resolved == protected_path or protected_path in resolved.parents:
+    resolved_text = _norm(resolved)
+    for protected_text in (*builtin_paths, *map(_norm, extra_paths)):
+        if _within(resolved_text, protected_text):
             return True
-    return False
+
+    # Home is protected itself, not its contents; protected paths cover their subtree
+    own_id = _identity(resolved)
+    if own_id and own_id == _identity(os.path.expanduser("~")):
+        return True
+    subtree_ids = set(builtin_ids)
+    subtree_ids.update(i for i in map(_identity, extra_paths) if i)
+    if own_id in subtree_ids:
+        return True
+    return any(_parent_identity(str(parent)) in subtree_ids for parent in resolved.parents)
 
 
 class FileStatus(Enum):

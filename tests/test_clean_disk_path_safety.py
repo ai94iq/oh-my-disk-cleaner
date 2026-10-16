@@ -50,6 +50,20 @@ def test_filesystem_and_home_roots_are_refused(clean_disk, cleaner, tmp_path, mo
     assert validated == str(cache.resolve())
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows path aliases")
+def test_custom_path_refuses_aliases_of_home_and_system(clean_disk, cleaner):
+    home = os.path.expanduser("~")
+    temp = os.path.join(os.environ.get("SystemRoot", "C:\\Windows"), "Temp")
+    aliases = [
+        "\\\\?\\" + home,
+        "\\\\localhost\\" + home[0] + "$" + home[2:],
+        "\\\\localhost\\" + temp[0] + "$" + temp[2:],
+    ]
+    for alias in aliases:
+        with pytest.raises(clean_disk.UnsafePathError):
+            cleaner.validate_custom_path(alias, allow_unsafe=True)
+
+
 def test_clean_directory_refuses_a_protected_root(clean_disk, tmp_path, monkeypatch):
     home = tmp_path / "home"
     home.mkdir()

@@ -3,6 +3,8 @@
 import os
 from pathlib import Path
 
+import pytest
+
 from diskcleaner.config import Config
 from diskcleaner.config.defaults import get_protected_paths
 from diskcleaner.core.classifier import FileClassifier, RiskLevel
@@ -46,6 +48,38 @@ def test_extension_protected_case_insensitive(tmp_path):
 def test_defaults_used_when_lists_omitted(tmp_path):
     assert is_protected(tmp_path / "a.exe") is True
     assert is_protected(tmp_path / "a.txt") is False
+
+
+def windows_aliases(path: str):
+    """Other spellings Windows accepts for the same local path."""
+    drive, rest = path[0], path[2:]
+    return [f"\\\\?\\{path}", f"\\\\localhost\\{drive}$\\{rest.lstrip(chr(92))}"]
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows path aliases")
+def test_windows_path_aliases_stay_protected():
+    system_root = os.environ.get("SystemRoot", "C:\\Windows")
+    home = os.path.expanduser("~")
+    for target in (os.path.join(system_root, "win.ini"), home):
+        for alias in windows_aliases(target):
+            assert is_protected(alias, [], []) is True, alias
+
+
+@pytest.mark.skipif(os.name != "nt", reason="Windows path aliases")
+def test_alias_of_user_protected_folder_is_protected(tmp_path):
+    keep = tmp_path / "keep"
+    (keep / "sub").mkdir(parents=True)
+    alias = windows_aliases(str(keep / "sub"))[0]
+    assert is_protected(alias, [keep], []) is True
+
+
+def test_check_is_fast_enough_for_large_scans(tmp_path):
+    import time
+
+    start = time.perf_counter()
+    for _ in range(1000):
+        is_protected(tmp_path / "a.log", [], [])
+    assert time.perf_counter() - start < 0.5
 
 
 def test_config_cannot_remove_builtin_protection(tmp_path):
