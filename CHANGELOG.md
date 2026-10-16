@@ -63,6 +63,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   duplicate install guides.
 
 ### Fixed
+- Scans: the folder walk visited deep trees in quadratic time and every
+  protection check re-resolved the config list (a temp preview took 56.9 s,
+  now 6.8 s on the same 2.64 GB; a whole C: scan 20.1 s, now 16.4 s).
+- Desktop app: white text on filled controls in dark mode, a window that
+  stays usable at 640 px (icon-only page switch, stacked cards), progress
+  shown in the tables while a job runs, icons drawn on whole pixels at
+  125%, stronger disabled icons, and icons centred on their labels.
 - `safe_print` no longer crashes without a console (`pythonw`, windowed
   bundles), where `sys.stdout` is None.
 - `analyze_progressive.py` crashed on import; its folder totals now cover
