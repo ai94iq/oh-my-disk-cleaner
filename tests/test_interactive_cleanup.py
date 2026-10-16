@@ -70,6 +70,40 @@ def test_symlink_removes_link_only(ui, tmp_path):
     assert kept.exists()
 
 
+def test_refuses_protected_pattern(ui, tmp_path):
+    target = make_file(tmp_path, "app.db")
+
+    assert ui._execute_cleanup([str(target)], backup=False) is False
+
+    assert target.exists()
+
+
+def test_refuses_link_inside_protected_folder(ui, tmp_path, monkeypatch):
+    from diskcleaner.config import Config
+
+    keep = tmp_path / "work" / "keep"
+    keep.mkdir()
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    link = keep / "link"
+    try:
+        os.symlink(outside, link, target_is_directory=True)
+    except (OSError, NotImplementedError) as error:
+        pytest.skip(f"Cannot create a symlink here: {error}")
+    real_load = Config.load
+
+    def load_protecting_keep(*args, **kwargs):
+        config = real_load(*args, **kwargs)
+        config.set("protected.paths", [str(keep)])
+        return config
+
+    monkeypatch.setattr(Config, "load", staticmethod(load_protecting_keep))
+
+    assert ui._execute_cleanup([str(link)], backup=False) is False
+
+    assert os.path.lexists(link)
+
+
 def test_confirmed_cleanup_runs(ui, tmp_path, monkeypatch):
     target = make_file(tmp_path, "old.log")
     monkeypatch.setattr("builtins.input", lambda prompt="": "YES")

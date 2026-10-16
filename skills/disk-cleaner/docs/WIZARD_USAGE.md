@@ -38,12 +38,12 @@ python scripts/interactive_wizard.py ~/Downloads     # a given folder
 |---|---|---|---|
 | `[OK]` | Safe | Temp and build artifacts, logs, caches | Can be selected in one step |
 | `[!]` | Needs confirmation | Downloads, media, documents and anything unclassified | Select by hand |
-| `[X]` | Protected | Matches a protected path, extension or pattern (`*.db`, `*.conf` and similar) | Needs `I UNDERSTAND` |
+| `[X]` | Protected | Matches a protected path, extension or pattern (`*.db`, `*.conf` and similar) | Shown for information, never deleted |
 
-Protected paths (system folders, the home folder) and protected extensions
-(executables, installers, disk images) are refused at delete time even if
-selected. Config files can add protections but cannot remove the built-in
-ones.
+Protected paths (system folders, the home folder), extensions (executables,
+installers, disk images) and patterns are refused at delete time even if
+selected; a link is judged by the folder it sits in. Config files can add
+protections but cannot remove the built-in ones.
 
 ## Confirmation steps
 

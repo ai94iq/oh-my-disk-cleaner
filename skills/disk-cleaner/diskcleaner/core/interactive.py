@@ -648,7 +648,11 @@ class InteractiveCleanupUI:
         Returns:
             True if all files were processed successfully.
         """
-        from diskcleaner.core.safety import SafetyChecker, is_protected
+        from diskcleaner.core.safety import (
+            SafetyChecker,
+            is_protected,
+            matches_protected_pattern,
+        )
 
         safety_checker = SafetyChecker()
         success_count = 0
@@ -664,9 +668,11 @@ class InteractiveCleanupUI:
                     & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
                 )
 
-                if not is_link and is_protected(
-                    path, safety_checker.protected_paths, safety_checker.protected_extensions
-                ):
+                # A link is judged by the folder it sits in, anything else by itself
+                checked = path.parent if is_link else path
+                if is_protected(
+                    checked, safety_checker.protected_paths, safety_checker.protected_extensions
+                ) or matches_protected_pattern(path.name, safety_checker.protected_patterns):
                     failed_files.append((file_path, "protected path"))
                     continue
 
