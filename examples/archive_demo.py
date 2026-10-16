@@ -8,8 +8,8 @@ Demonstrates basic usage of the file organizer.
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# The package lives in the skill folder
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "skills" / "disk-cleaner"))
 
 from diskcleaner.core.organizer import FileOrganizer
 

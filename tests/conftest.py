@@ -2,7 +2,14 @@
 Pytest configuration for cross-platform testing.
 """
 
+import sys
+from pathlib import Path
+
 import pytest
+
+# Tests import the package the skill ships, not an installed copy.
+SKILL_DIR = Path(__file__).resolve().parent.parent / "skills" / "disk-cleaner"
+sys.path.insert(0, str(SKILL_DIR))
 
 
 def pytest_collection_modifyitems(config, items):

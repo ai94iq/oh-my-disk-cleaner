@@ -42,8 +42,10 @@ dev = [
     "pre-commit>=2.0",
 ]
 
-[tool.setuptools]
-packages = ["diskcleaner"]
+# The skill folder holds the only copy of the package.
+[tool.setuptools.packages.find]
+where = ["skills/disk-cleaner"]
+include = ["diskcleaner*"]
 
 [tool.setuptools.package-data]
 diskcleaner = ["py.typed"]

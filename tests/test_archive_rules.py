@@ -12,9 +12,6 @@ from tempfile import TemporaryDirectory
 
 import pytest
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from diskcleaner.core.rules.archive_rules import (
     ArchiveRule,
     ArchiveStrategy,

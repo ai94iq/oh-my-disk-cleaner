@@ -47,7 +47,7 @@ class TestOrganizeCLI:
             [sys.executable, "scripts/organize_files.py", "--list-strategies"],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode == 0
@@ -67,7 +67,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode != 0
@@ -86,7 +86,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode == 0
@@ -106,7 +106,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         # Should default to preview
@@ -133,7 +133,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode == 0
@@ -155,7 +155,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode == 0
@@ -177,7 +177,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode == 0
@@ -201,7 +201,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode == 0
@@ -223,7 +223,7 @@ class TestOrganizeCLI:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert result.returncode == 0
@@ -259,7 +259,7 @@ class TestCLIIntegration:
             ],
             capture_output=True,
             text=True,
-            cwd=Path(__file__).parent.parent,
+            cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
         )
 
         assert preview_result.returncode == 0
@@ -286,7 +286,7 @@ class TestCLIIntegration:
                 ],
                 capture_output=True,
                 text=True,
-                cwd=Path(__file__).parent.parent,
+                cwd=Path(__file__).parent.parent / "skills" / "disk-cleaner",
             )
 
             assert result.returncode == 0
