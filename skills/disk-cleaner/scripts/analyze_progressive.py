@@ -10,6 +10,7 @@ Analysis tool optimized for large disks:
 """
 
 import argparse
+import contextlib
 import json
 import os
 import sys
@@ -323,42 +324,33 @@ Examples:
     args = parser.parse_args()
 
     analyzer = ProgressiveDiskAnalyzer(args.path, include_windows=args.include_windows)
+    if not analyzer.target_path.is_dir():
+        print(f"[X] Not a folder: {analyzer.target_path}", file=sys.stderr)
+        return 2
 
-    # Quick sample mode
-    if args.sample:
-        sample_result = analyzer.quick_sample(sample_time=1.0)
-
-        if args.json:
-            print(json.dumps(sample_result, indent=2))
-        return 0
-
-    # Perform quick sampling first
-    sample_result = analyzer.quick_sample(sample_time=1.0)
-
-    # Ask whether to continue
-    estimated_time = sample_result.get("estimated_time_seconds", 0)
-    if estimated_time > 60:  # Over 1 minute
-        safe_print(f"\n[!] Estimated scan time: {estimated_time/60:.1f} minutes")
-        safe_print("Recommendations:")
-        safe_print("   1. Use --sample for quick sample mode")
-        safe_print("   2. Use --max-seconds to reduce time limit")
-        safe_print("   3. Use --max-files to limit file count")
-
-        # Non-interactive mode, return directly
-        if args.json:
-            print(json.dumps({"sample": sample_result}, indent=2))
-        return 0
-
-    # Progressive scan
-    results = analyzer.progressive_scan(
-        max_files=args.max_files, max_seconds=args.max_seconds, show_progress=not args.no_progress
-    )
+    # With --json, stdout carries only the JSON; progress text goes to stderr
+    stdout = sys.stdout
+    try:
+        with contextlib.redirect_stdout(sys.stderr if args.json else stdout):
+            if args.sample:
+                results = analyzer.quick_sample(sample_time=1.0)
+            else:
+                analyzer.quick_sample(sample_time=1.0)
+                results = analyzer.progressive_scan(
+                    max_files=args.max_files,
+                    max_seconds=args.max_seconds,
+                    show_progress=not args.no_progress,
+                )
+    except OSError as error:
+        excluded = isinstance(error, PermissionError) and not args.include_windows
+        hint = " (system folders need --include-windows)" if excluded else ""
+        print(f"[X] Cannot scan {analyzer.target_path}: {error}{hint}", file=sys.stderr)
+        return 2
 
     if args.json:
-        print(json.dumps(results, indent=2, ensure_ascii=False))
-    else:
+        print(json.dumps(results, indent=2, ensure_ascii=False), file=stdout)
+    elif not args.sample:
         print(analyzer.format_report(results))
-
     return 0
 
 

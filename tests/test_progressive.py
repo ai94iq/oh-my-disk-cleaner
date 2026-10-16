@@ -24,6 +24,34 @@ def test_script_starts():
     assert "--max-files" in result.stdout
 
 
+def run_script(*args):
+    return subprocess.run(
+        [sys.executable, str(SCRIPT), *args], capture_output=True, text=True, timeout=120
+    )
+
+
+def test_bad_path_is_a_one_line_error(tmp_path):
+    for bad in (tmp_path / "missing", tmp_path / "file.txt"):
+        if bad.name == "file.txt":
+            bad.write_text("x", encoding="utf-8")
+        result = run_script("--path", str(bad), "--no-progress")
+        assert result.returncode == 2
+        assert "Traceback" not in result.stderr
+        assert str(bad) in result.stderr
+
+
+def test_json_output_is_valid_json(tmp_path):
+    import json
+
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "f.bin").write_bytes(b"x" * 2048)
+
+    for extra in ((), ("--sample",)):
+        result = run_script("--path", str(tmp_path), "--json", *extra)
+        assert result.returncode == 0, result.stderr
+        json.loads(result.stdout)
+
+
 def load_script():
     spec = importlib.util.spec_from_file_location("analyze_progressive_under_test", SCRIPT)
     module = importlib.util.module_from_spec(spec)
