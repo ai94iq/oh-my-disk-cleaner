@@ -28,11 +28,8 @@ Run them; there is nothing to install. Every script prints `--help`.
 
 ## Analyze a drive
 
-1. Estimate first (about one second):
-
-   ```bash
-   python scripts/analyze_disk.py --path C:\ --sample
-   ```
+1. Optional: a one-second `--sample` shows how many files it reached and
+   the scan rate. It cannot predict the full scan time.
 
 2. Scan. For a whole drive use the progressive scanner with the file cap
    raised, otherwise it stops at its 50,000-file default within a second:

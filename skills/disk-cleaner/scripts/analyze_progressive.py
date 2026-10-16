@@ -4,7 +4,7 @@ Progressive Disk Analyzer
 
 Analysis tool optimized for large disks:
 1. Quick sampling estimation (0.5-1 second)
-2. Display estimated scan time
+2. Display the sample's scan rate
 3. Progressive result display
 4. Can interrupt anytime to view partial results
 """
@@ -99,24 +99,17 @@ class ProgressiveDiskAnalyzer:
 
         elapsed = time.time() - start
 
-        # Calculate estimates
+        # Scan rate over the sample (a full-scan time cannot be known from it)
         if elapsed > 0:
             files_per_second = file_count / elapsed
         else:
             files_per_second = 0
-
-        # Estimate total time (2x safety margin)
-        if files_per_second > 0:
-            estimated_seconds = (file_count / files_per_second) * 2
-        else:
-            estimated_seconds = 0
 
         result = {
             "sample_file_count": file_count,
             "sample_size_gb": round(total_size / (1024**3), 2),
             "sample_dirs": sample_dirs,
             "files_per_second": round(files_per_second, 0),
-            "estimated_time_seconds": round(estimated_seconds, 1),
         }
 
         # Display sampling results
@@ -124,12 +117,6 @@ class ProgressiveDiskAnalyzer:
         safe_print(f"   Files found: {file_count:,}")
         safe_print(f"   Directories: {sample_dirs:,}")
         safe_print(f"   Scan speed: {result['files_per_second']:,} files/sec")
-
-        if estimated_seconds > 0:
-            if estimated_seconds < 60:
-                safe_print(f"   Estimated full scan: {estimated_seconds:.0f} seconds")
-            else:
-                safe_print(f"   Estimated full scan: {estimated_seconds/60:.1f} minutes")
 
         return result
 

@@ -36,7 +36,6 @@ class ScanProfile:
     max_depth: int = 0
     avg_file_size: float = 0.0
     files_per_second: float = 0.0
-    estimated_time: float = 0.0
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert to dictionary."""
@@ -201,10 +200,6 @@ class QuickProfiler:
 
         if self.sample_time > 0:
             result.files_per_second = result.file_count / self.sample_time
-
-        # Estimate full scan time (with 2x safety margin)
-        if result.files_per_second > 0:
-            result.estimated_time = (result.file_count / result.files_per_second) * 2
 
         return result
 

@@ -40,7 +40,6 @@ def scan_real_directory(path: Path, name: str) -> dict:
     print(f"  Estimated files: {profile.file_count:,}")
     print(f"  Estimated size: {profile.total_size / 1024 / 1024:.2f} MB")
     print(f"  Estimated depth: {profile.max_depth}")
-    print(f"  Estimated time: {profile.estimated_time:.2f}s")
 
     # Actual scan
     print("\n[2/2] Full Scan...")
@@ -69,7 +68,6 @@ def scan_real_directory(path: Path, name: str) -> dict:
         "throughput": throughput,
         "error_count": result.error_count,
         "estimated_count": profile.file_count,
-        "estimated_time": profile.estimated_time,
         "estimation_accuracy": (
             profile.file_count / result.total_count if result.total_count > 0 else 0
         ),

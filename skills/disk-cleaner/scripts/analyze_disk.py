@@ -121,24 +121,17 @@ class DiskAnalyzer:
 
         elapsed = time.time() - start
 
-        # Calculate estimates
+        # Scan rate over the sample (a full-scan time cannot be known from it)
         if elapsed > 0:
             files_per_second = file_count / elapsed
         else:
             files_per_second = 0
-
-        # Estimate total time (2x safety margin)
-        if files_per_second > 0:
-            estimated_seconds = (file_count / files_per_second) * 2
-        else:
-            estimated_seconds = 0
 
         result = {
             "sample_file_count": file_count,
             "sample_size_gb": round(total_size / (1024**3), 2),
             "sample_dirs": sample_dirs,
             "files_per_second": round(files_per_second, 0),
-            "estimated_time_seconds": round(estimated_seconds, 1),
         }
 
         # Display sampling results
@@ -146,18 +139,6 @@ class DiskAnalyzer:
         print(f"   Files found: {file_count:,}")
         print(f"   Directories: {sample_dirs:,}")
         print(f"   Scan speed: {result['files_per_second']:,} files/sec")
-
-        if estimated_seconds > 0:
-            if estimated_seconds < 60:
-                print(f"   Estimated full scan: {estimated_seconds:.0f} seconds")
-            else:
-                print(f"   Estimated full scan: {estimated_seconds/60:.1f} minutes")
-
-            if estimated_seconds > 120:  # Over 2 minutes
-                print("\n[i] Recommendations:")
-                print("   Use --file-limit to limit file count")
-                print("   Use --time-limit to limit time")
-                print("   Or use --sample to view sampling results only")
 
         return result
 
@@ -672,7 +653,7 @@ Examples:
     parser.add_argument(
         "--sample",
         action="store_true",
-        help="Quick sample mode (1 second) to estimate scan time and directory characteristics",
+        help="Quick sample mode (1 second): files, folders and scan rate",
     )
     parser.add_argument(
         "--progressive",
@@ -733,22 +714,6 @@ Examples:
         if args.json:
             print(json.dumps(sample_result, indent=2))
         sys.exit(0)
-
-    # For potentially large disks, sample first and ask
-    if not args.json and not args.sample and not args.progressive:
-        # Automatically perform 1-second sampling
-        sample_result = analyzer.quick_sample(sample_time=1.0)
-        estimated_time = sample_result.get("estimated_time_seconds", 0)
-
-        # If estimated over 2 minutes, recommend using limits
-        if estimated_time > 120:
-            print(f"\n[!] Estimated full scan time: {estimated_time/60:.1f} minutes")
-            print("\n[i] Recommended options:")
-            print("   --sample         Quick sample mode (1 second)")
-            print("   --file-limit 10000  Limit file count")
-            print("   --time-limit 30   Limit time (seconds)")
-            print("   --progressive    Progressive scanning")
-            print("\nTo continue full scan, press Ctrl+C and re-run with appropriate parameters")
 
     report = analyzer.generate_report(
         find_duplicates=args.find_duplicates,
