@@ -6,6 +6,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SKILL = Path(__file__).resolve().parent.parent / "skills" / "disk-cleaner"
 SCRIPTS = SKILL / "scripts"
 
@@ -37,6 +39,35 @@ def test_ignores_planted_package_in_cwd_and_env(tmp_path, monkeypatch):
     root = load_bootstrap().SkillBootstrap().detect_skill_root()
 
     assert root.resolve() == SKILL
+
+
+# check_skill.py is the diagnostic for a broken install: it loads the bootstrap
+# inside a try when run, so importing it loads no diskcleaner at all
+SCRIPT_NAMES = sorted(
+    p.stem for p in SCRIPTS.glob("*.py") if p.stem not in {"skill_bootstrap", "check_skill"}
+)
+
+
+@pytest.mark.parametrize("script", SCRIPT_NAMES)
+def test_scripts_ignore_planted_modules_when_imported(script, tmp_path):
+    fake = plant_fake_skill(tmp_path / "fake")
+    (fake / "skill_bootstrap.py").write_text("raise SystemExit('PLANTED BOOTSTRAP')\n", encoding="utf-8")
+    code = (
+        "import sys; sys.path.append(sys.argv[1]);"
+        "import diskcleaner;"  # a foreign copy already loaded, as a host program might
+        f"import {script};"
+        "import diskcleaner; print(diskcleaner.__file__)"
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code, str(SCRIPTS)],
+        cwd=fake,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert Path(result.stdout.strip().splitlines()[-1]).resolve().is_relative_to(SKILL)
 
 
 def test_import_resolves_inside_skill(tmp_path):

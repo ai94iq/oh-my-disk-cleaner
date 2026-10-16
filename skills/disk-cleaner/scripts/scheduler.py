@@ -13,6 +13,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List
 
+# This folder first, so its skill_bootstrap loads; the bootstrap then puts the
+# bundled diskcleaner package first and evicts any other copy already imported
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from skill_bootstrap import setup_skill_environment  # noqa: E402
+
+setup_skill_environment(require_modules=False)
+
 
 class CleanupScheduler:
     """Scheduler for automated disk cleanup tasks."""
@@ -98,8 +105,6 @@ class CleanupScheduler:
         print(f"Mode: {'DRY RUN' if dry_run else 'CLEAN'}")
         print(f"{'='*60}\n")
 
-        # Import cleanup modules
-        sys.path.insert(0, str(Path(__file__).parent.parent))
         from diskcleaner.core import SmartCleanupEngine
 
         # Run cleanup

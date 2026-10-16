@@ -8,11 +8,14 @@ Tests the wizard functionality without requiring user interaction.
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-SCRIPT_DIR = Path(__file__).parent.parent
-sys.path.insert(0, str(SCRIPT_DIR))
+# This folder first, so its skill_bootstrap loads; the bootstrap then puts the
+# bundled diskcleaner package first and evicts any other copy already imported
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from skill_bootstrap import setup_skill_environment  # noqa: E402
 
-from scripts.interactive_wizard import InteractiveWizard
+setup_skill_environment(require_modules=False)
+
+from interactive_wizard import InteractiveWizard  # noqa: E402
 
 
 def test_wizard_initialization():

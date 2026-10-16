@@ -71,7 +71,16 @@ class SkillBootstrap:
             sys.path.remove(skill_root_str)
         sys.path.insert(0, skill_root_str)
         self.log(f"Added to sys.path: {skill_root_str}")
+        self._evict_foreign_package(skill_root)
         return self._verify_import()
+
+    def _evict_foreign_package(self, skill_root: Path) -> None:
+        """Forget any diskcleaner modules imported from outside the skill root."""
+        for name in [n for n in sys.modules if n == "diskcleaner" or n.startswith("diskcleaner.")]:
+            module_file = getattr(sys.modules[name], "__file__", None)
+            if not module_file or not Path(module_file).resolve().is_relative_to(skill_root):
+                self.log(f"Evicting foreign module {name} from {module_file}")
+                del sys.modules[name]
 
     def _verify_import(self) -> bool:
         """Verify diskcleaner module can be imported correctly"""

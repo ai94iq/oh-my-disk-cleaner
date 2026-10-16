@@ -9,8 +9,12 @@ import argparse
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# This folder first, so its skill_bootstrap loads; the bootstrap then puts the
+# bundled diskcleaner package first and evicts any other copy already imported
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from skill_bootstrap import setup_skill_environment  # noqa: E402
+
+setup_skill_environment(require_modules=False)
 
 from diskcleaner.core.organizer import FileOrganizer
 from diskcleaner.core.rules.archive_rules import RuleEngine

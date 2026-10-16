@@ -24,10 +24,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict
 
-# Add parent directory to path for imports
-script_dir = Path(__file__).parent.parent
-if str(script_dir) not in sys.path:
-    sys.path.insert(0, str(script_dir))
+# This folder first, so its skill_bootstrap loads; the bootstrap then puts the
+# bundled diskcleaner package first and evicts any other copy already imported
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from skill_bootstrap import setup_skill_environment  # noqa: E402
+
+setup_skill_environment(require_modules=False)
 
 try:
     from diskcleaner.core.growth_analyzer import GrowthAnalyzer, format_size

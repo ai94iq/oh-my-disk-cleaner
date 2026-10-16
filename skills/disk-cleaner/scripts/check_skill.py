@@ -11,32 +11,6 @@ import sys
 from pathlib import Path
 
 
-# Initialize Windows console encoding
-def init_console():
-    """Initialize console encoding"""
-    if platform.system().lower() == "windows":
-        try:
-            import ctypes
-
-            ctypes.windll.kernel32.SetConsoleOutputCP(65001)
-            if hasattr(sys.stdout, "buffer"):
-                import io
-
-                sys.stdout = io.TextIOWrapper(
-                    sys.stdout.buffer, encoding="utf-8", errors="replace", line_buffering=True
-                )
-            if hasattr(sys.stderr, "buffer"):
-                sys.stderr = io.TextIOWrapper(
-                    sys.stderr.buffer, encoding="utf-8", errors="replace", line_buffering=True
-                )
-        except Exception:
-            pass
-
-
-# Initialize at module load time
-init_console()
-
-
 def print_section(title: str):
     """Print section title"""
     print(f"\n{'='*60}")
@@ -115,9 +89,7 @@ def check_imports():
 
     # First check bootstrap module
     try:
-        script_dir = Path(__file__).parent.resolve()
-        if str(script_dir) not in sys.path:
-            sys.path.insert(0, str(script_dir))
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
 
         from skill_bootstrap import get_bootstrap
 

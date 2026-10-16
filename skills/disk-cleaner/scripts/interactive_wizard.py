@@ -21,9 +21,12 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-# Add parent directory to path for imports
-SCRIPT_DIR = Path(__file__).parent.parent
-sys.path.insert(0, str(SCRIPT_DIR))
+# This folder first, so its skill_bootstrap loads; the bootstrap then puts the
+# bundled diskcleaner package first and evicts any other copy already imported
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from skill_bootstrap import setup_skill_environment  # noqa: E402
+
+setup_skill_environment(require_modules=False)
 
 from diskcleaner.config import Config
 from diskcleaner.core.interactive import InteractiveCleanupUI

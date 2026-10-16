@@ -21,9 +21,7 @@ from typing import Dict, List, Optional
 
 # Use smart bootstrap module import
 try:
-    script_dir = Path(__file__).parent.resolve()
-    if str(script_dir) not in sys.path:
-        sys.path.insert(0, str(script_dir))
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 
     from skill_bootstrap import import_diskcleaner_modules, safe_print
 

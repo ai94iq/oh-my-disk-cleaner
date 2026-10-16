@@ -17,9 +17,7 @@ from typing import Dict, List
 # monitor_disk.py does not depend on diskcleaner core modules
 # But for consistency, we still include bootstrap module for future expansion
 try:
-    script_dir = Path(__file__).parent.resolve()
-    if str(script_dir) not in sys.path:
-        sys.path.insert(0, str(script_dir))
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
 
     from skill_bootstrap import setup_skill_environment
 
