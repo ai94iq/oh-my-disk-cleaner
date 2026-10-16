@@ -1,4 +1,4 @@
-"""A stand-in for diskcleaner_gui.service, shared by the Qt and Toga app tests."""
+"""A stand-in for diskcleaner_gui.service, for the Qt app tests."""
 
 from diskcleaner_gui import service as real
 

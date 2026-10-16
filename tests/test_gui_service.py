@@ -86,12 +86,3 @@ def test_browser_history_is_not_default():
     assert "browser_history" in service.CATEGORIES
     assert "browser_history" not in service.DEFAULT_CATEGORIES
 
-
-def test_briefcase_version_equals_the_apps_version():
-    import tomllib
-
-    import diskcleaner_gui
-
-    root = Path(__file__).resolve().parents[1]
-    config = tomllib.loads((root / "pyproject.toml").read_text(encoding="utf-8"))
-    assert config["tool"]["briefcase"]["version"] == diskcleaner_gui.__version__

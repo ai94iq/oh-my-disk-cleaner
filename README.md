@@ -14,7 +14,7 @@ hardened and simplified.
 - [Requirements](#requirements)
 - [Install](#install)
 - [Use](#use)
-- [Desktop apps](#desktop-apps)
+- [Desktop app](#desktop-app)
 - [Safety](#safety)
 - [Layout](#layout)
 - [Development](#development)
@@ -67,29 +67,25 @@ python scripts/monitor_disk.py --warning 80 --critical 90
 threshold and 2 at the critical one. [SKILL.md](skills/disk-cleaner/SKILL.md)
 lists every script with its key flags, and the workflow an agent follows.
 
-## Desktop apps
+## Desktop app
 
-Two windows over the same scripts and safety checks, one in PySide6 and one in
-Toga. Each has three pages: Analyze (largest folders and files), Clean
-(preview, then delete after a confirm) and Duplicates (report only). Clean is
-enabled only after a preview of the ticked categories that found something.
+A PySide6 window over the same scripts and safety checks. It has three pages:
+Analyze (largest folders and files), Clean (preview, then delete after a
+confirm) and Duplicates (report only). Clean is enabled only after a preview
+of the ticked categories that found something.
 
 ```bash
-pip install -e ".[qt]"      # PySide6 app
+pip install -e ".[qt]"
 python -m diskcleaner_gui.qt_app
-
-pip install -e ".[toga]"    # Toga app
-python -m diskcleaner_gui.toga_app
 ```
 
-Install editable: the apps load the scripts from `skills/disk-cleaner`. A
+Install editable: the app loads the scripts from `skills/disk-cleaner`. A
 preview walks the real temp folders and can take minutes on a full disk.
 `--self-check REPORT` proves a build loads the scripts (exit 0, `service: ok`).
 
-Downloads: a `gui-vX.Y.Z` tag builds the PySide6 app for Windows, Linux and
-macOS and the Toga app for Windows, and attaches them to the GitHub release
-(`.github/workflows/gui.yml`, `packaging/qt/`, `[tool.briefcase]` in
-`pyproject.toml`).
+Downloads: a `gui-vX.Y.Z` tag builds the app for Windows, Linux and macOS and
+attaches the bundles to the GitHub release (`.github/workflows/gui.yml`,
+`packaging/qt/`).
 
 ## Safety
 
@@ -112,7 +108,7 @@ macOS and the Toga app for Windows, and attaches them to the GitHub release
 - `skills/disk-cleaner/scripts/`: command-line scripts
 - `skills/disk-cleaner/diskcleaner/`: the package the scripts import (the only copy)
 - `skills/disk-cleaner/references/`, `skills/disk-cleaner/docs/`: reference pages
-- `apps/diskcleaner_gui/`: the desktop apps (`service.py` calls the scripts; `qt_app/`, `toga_app/`)
+- `apps/diskcleaner_gui/`: the desktop app (`service.py` calls the scripts; `qt_app/` is the window)
 - `packaging/qt/`: the PySide6 bundle (PyInstaller)
 - `tests/`: pytest suite; `tests/benchmarks/` holds slow performance runs
 - `docs/ARCHIVE_FEATURE.md`: the file organizer's archive rules

@@ -16,7 +16,6 @@ _HERE = Path(__file__).resolve()
 _CANDIDATES = [
     _HERE.parents[2] / "skills" / "disk-cleaner" / "scripts",  # a clone of the repo
     Path(getattr(sys, "_MEIPASS", "")) / "skills" / "disk-cleaner" / "scripts",  # PyInstaller
-    _HERE.parents[1] / "disk-cleaner" / "scripts",  # Briefcase
 ]
 SCRIPTS = next((path for path in _CANDIDATES if (path / "clean_disk.py").is_file()), None)
 if SCRIPTS is None:

@@ -1,1 +1,0 @@
-"""The Toga desktop app."""
