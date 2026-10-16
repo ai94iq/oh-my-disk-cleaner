@@ -13,6 +13,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Desktop apps in `apps/diskcleaner_gui/`, one in PySide6 and one in Toga,
+  over a toolkit-free `service.py` that calls the scripts: Analyze, Clean
+  (preview, then delete after a confirm) and Duplicates (report only).
+- Bundles: PyInstaller for the PySide6 app (`packaging/qt/`) and Briefcase
+  for the Toga app; `gui.yml` builds and self-checks them and attaches them to
+  the release of a `gui-vX.Y.Z` tag.
+- `progressive_scan(should_stop=...)` stops a scan with reason `cancelled`;
+  `clean_directory` also reports `space_freed_bytes`;
+  `monitor_disk.get_mount_points()` is a module function.
+
 ### Security
 - The skill imports only its bundled `diskcleaner` package. The bootstrap no
   longer searches the working directory, home, `DISK_CLEANER_SKILL_PATH`,
@@ -51,6 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   duplicate install guides.
 
 ### Fixed
+- `safe_print` no longer crashes without a console (`pythonw`, windowed
+  bundles), where `sys.stdout` is None.
 - `analyze_progressive.py` crashed on import; its folder totals now cover
   every top-level folder at full depth, sort on exact bytes, survive Ctrl+C,
   and `--include-windows` counts system folders.
