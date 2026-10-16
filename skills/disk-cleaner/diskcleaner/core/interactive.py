@@ -4,6 +4,7 @@ Interactive user interface for cleanup operations.
 Provides menu-driven interaction for viewing and selecting files to clean.
 """
 
+import stat
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
@@ -647,7 +648,7 @@ class InteractiveCleanupUI:
         Returns:
             True if all files were processed successfully.
         """
-        from diskcleaner.core.safety import SafetyChecker
+        from diskcleaner.core.safety import SafetyChecker, is_protected
 
         safety_checker = SafetyChecker()
         success_count = 0
@@ -656,18 +657,28 @@ class InteractiveCleanupUI:
         for file_path in files:
             try:
                 path = Path(file_path)
+                # lstat: a link is removed itself, its target is never touched
+                metadata = path.lstat()
+                is_link = stat.S_ISLNK(metadata.st_mode) or bool(
+                    getattr(metadata, "st_file_attributes", 0)
+                    & getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
+                )
 
-                # Create backup if requested
-                if backup:
-                    backup_path = safety_checker.backup_file(file_path)
-                    if backup_path:
-                        pass  # Backup created successfully
+                if not is_link and is_protected(
+                    path, safety_checker.protected_paths, safety_checker.protected_extensions
+                ):
+                    failed_files.append((file_path, "protected path"))
+                    continue
 
-                # Delete file
-                if path.is_file():
-                    path.unlink()
-                elif path.is_dir():
+                if backup and stat.S_ISREG(metadata.st_mode) and not is_link:
+                    if not safety_checker.create_backup(file_path):
+                        failed_files.append((file_path, "backup failed, file kept"))
+                        continue
+
+                if stat.S_ISDIR(metadata.st_mode) and not stat.S_ISLNK(metadata.st_mode):
                     path.rmdir()
+                else:
+                    path.unlink()
 
                 success_count += 1
 

@@ -430,9 +430,6 @@ class SafetyChecker:
         Returns:
             Path to backup file, or None if failed.
         """
-        if not self.backup_enabled:
-            return None
-
         try:
             # Create backup directory for today
             today = datetime.now().strftime("%Y-%m-%d")
