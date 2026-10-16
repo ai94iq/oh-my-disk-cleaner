@@ -1,53 +1,44 @@
-.PHONY: help install test test-bench lint format clean build skill-package
+.PHONY: help install dev test test-bench test-fast lint format clean build check all
 
-help:           ## 显示帮助信息
-	@echo "可用命令:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-15s\033[0m %s\n", $$1, $$2}'
+PKG := skills/disk-cleaner/diskcleaner
 
-install:        ## 安装开发依赖
+help:           ## Show this help
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "  %-15s %s\n", $$1, $$2}'
+
+install:        ## Install development dependencies
 	pip install -e ".[dev]"
 
-test:           ## 运行所有测试
-	pytest tests/ -v --cov=diskcleaner --cov-report=html --cov-report=term
-
-test-bench:     ## 运行性能基准测试
-	pytest tests/benchmarks/ -v
-
-test-fast:      ## 快速测试（跳过慢速测试）
-	pytest tests/ -v -m "not slow"
-
-lint:           ## 代码检查
-	@echo "Running black..."
-	black --check diskcleaner/ tests/
-	@echo "Running isort..."
-	isort --check-only diskcleaner/ tests/
-	@echo "Running flake8..."
-	flake8 diskcleaner/ tests/ --max-line-length=100
-	@echo "Running mypy..."
-	mypy diskcleaner/
-
-format:         ## 自动格式化代码
-	black diskcleaner/ tests/
-	isort diskcleaner/ tests/
-
-clean:          ## 清理临时文件
-	rm -rf build/ dist/ *.egg-info/ .pytest_cache/
-	rm -rf htmlcov/ .coverage
-	find diskcleaner/ -type d -name __pycache__ -exec rm -rf {} +
-	find diskcleaner/ -type f -name "*.pyc" -delete
-	find tests/ -type d -name __pycache__ -exec rm -rf {} +
-	find tests/ -type f -name "*.pyc" -delete
-
-build:          ## 构建分发包
-	python -m build
-
-skill-package:  ## 打包技能文件 (.skill)
-	python skills/disk-cleaner/scripts/package_skill.py
-
-dev:            ## 设置开发环境
+dev:            ## Install dev dependencies and pre-commit hooks
 	pip install -e ".[dev]"
 	pre-commit install
 
-check: lint test ## 运行所有检查（lint + test）
+test:           ## Run all tests with coverage
+	pytest tests/ -v --cov=diskcleaner --cov-report=html --cov-report=term
 
-all: format lint test ## 完整工作流（format + lint + test）
+test-bench:     ## Run performance benchmarks
+	pytest tests/benchmarks/ -v
+
+test-fast:      ## Run tests, skipping slow ones
+	pytest tests/ -v -m "not slow"
+
+lint:           ## Run black, isort, flake8 and mypy
+	black --check $(PKG) tests/
+	isort --check-only $(PKG) tests/
+	flake8 $(PKG) tests/ --max-line-length=100
+	mypy $(PKG) --config-file=mypy.ini
+
+format:         ## Format code with black and isort
+	black $(PKG) tests/
+	isort $(PKG) tests/
+
+clean:          ## Remove build output and caches
+	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ htmlcov/ .coverage
+	find skills/ tests/ -type d -name __pycache__ -prune -exec rm -rf {} +
+
+build:          ## Build the distribution package
+	python -m build
+
+check: lint test ## Run lint and tests
+
+all: format lint test ## Format, lint and test
