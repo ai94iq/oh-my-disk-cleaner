@@ -99,6 +99,19 @@ def test_project_config_cannot_unprotect(tmp_path):
     assert checker.verify_file(file_info(tmp_path / "tool.exe")) == FileStatus.PROTECTED
 
 
+def test_project_config_cannot_drop_protected_patterns(tmp_path):
+    (tmp_path / ".disk-cleaner.yaml").write_text("protected:\n  patterns: []\n", encoding="utf-8")
+    config = Config.load(str(tmp_path))
+    checker = SafetyChecker(config=config)
+    checker.check_locks = False
+    checker.verify_perms = False
+    classifier = FileClassifier(config=config)
+    db = file_info(tmp_path / "app.db")
+
+    assert checker.verify_file(db) == FileStatus.PROTECTED
+    assert classifier._classify_risk(db) == RiskLevel.PROTECTED
+
+
 def test_windows_defaults_follow_environment(monkeypatch):
     monkeypatch.setenv("SystemRoot", r"X:\Win")
     assert r"X:\Win" in get_protected_paths()

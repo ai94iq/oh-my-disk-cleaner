@@ -6,6 +6,7 @@ file lock detection and permission verification. Locked files are reported
 and skipped; this module never terminates processes.
 """
 
+import fnmatch
 import functools
 import os
 import platform
@@ -17,7 +18,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from diskcleaner.config import Config
-from diskcleaner.config.defaults import get_protected_extensions, get_protected_paths
+from diskcleaner.config.defaults import (
+    get_protected_extensions,
+    get_protected_paths,
+    get_protected_patterns,
+)
 from diskcleaner.core.scanner import FileInfo
 
 
@@ -68,6 +73,17 @@ def _builtin_protection() -> Tuple[Tuple[str, ...], frozenset, frozenset]:
     identities = frozenset(i for i in map(_identity, paths) if i)
     extensions = frozenset(ext.lower() for ext in get_protected_extensions())
     return tuple(map(_norm, paths)), identities, extensions
+
+
+def matches_protected_pattern(filename: str, patterns: Optional[Iterable[str]] = None) -> bool:
+    """
+    Return whether a file name matches a protected pattern (*.db, config.* ...).
+
+    Like the path lists, given patterns add to the built-in ones and never
+    replace them; blank entries are ignored.
+    """
+    all_patterns = [*get_protected_patterns(), *(p for p in patterns or [] if str(p).strip())]
+    return any(fnmatch.fnmatch(filename, pattern) for pattern in all_patterns)
 
 
 def is_root_or_home(path: Path) -> bool:
@@ -227,22 +243,8 @@ class SafetyChecker:
         return FileStatus.SAFE
 
     def _is_protected_pattern(self, filename: str) -> bool:
-        """
-        Check if filename matches protected pattern.
-
-        Args:
-            filename: File name to check.
-
-        Returns:
-            True if pattern matches.
-        """
-        import fnmatch
-
-        for pattern in self.protected_patterns:
-            if fnmatch.fnmatch(filename, pattern):
-                return True
-
-        return False
+        """Check if filename matches a protected pattern (built-in or configured)."""
+        return matches_protected_pattern(filename, self.protected_patterns)
 
     def _is_locked(self, path: str) -> bool:
         """

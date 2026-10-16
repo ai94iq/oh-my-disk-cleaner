@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from diskcleaner.config import Config
-from diskcleaner.core.safety import is_protected
+from diskcleaner.core.safety import is_protected, matches_protected_pattern
 from diskcleaner.core.scanner import FileInfo
 
 
@@ -208,10 +208,8 @@ class FileClassifier:
         if is_protected(file.path, self.protected_paths, self.protected_extensions):
             return RiskLevel.PROTECTED
 
-        # Check if pattern matches protected patterns
-        for pattern in self.protected_patterns:
-            if fnmatch.fnmatch(file.name, pattern):
-                return RiskLevel.PROTECTED
+        if matches_protected_pattern(file.name, self.protected_patterns):
+            return RiskLevel.PROTECTED
 
         # Classify by file type
         file_type = self._classify_type(file)

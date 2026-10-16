@@ -178,6 +178,16 @@ def get_protected_extensions() -> List[str]:
     return get_default_config()["safety"]["protected_extensions"]
 
 
+def get_protected_patterns() -> List[str]:
+    """
+    Get list of protected file name patterns (databases, config files).
+
+    Returns:
+        fnmatch patterns for file names that should never be deleted.
+    """
+    return get_default_config()["protected"]["patterns"]
+
+
 def get_protected_paths() -> List[str]:
     """
     Get list of protected system paths.
