@@ -516,9 +516,7 @@ class Busy(QtCase):
         self.window.clean_page.trigger()
         self.window.preview_action.trigger()
         self.assertTrue(self.window.busy_bar.isVisible())
-        self.assertEqual(
-            self.window.preview_empty.title.text(), "Counting what Clean would remove"
-        )
+        self.assertEqual(self.window.preview_empty.title.text(), "Counting what Clean would remove")
         self.finish()
         self.window.dup_page.trigger()
         self.window.find_action.trigger()
@@ -546,7 +544,8 @@ class Resize(QtCase):
                 self.app.processEvents()
                 for action in (self.window.analyze_page, self.window.clean_page):
                     button = self.window.toolbar.widgetForAction(action) or next(
-                        b for b in self.window.findChildren(QAbstractButton)
+                        b
+                        for b in self.window.findChildren(QAbstractButton)
                         if getattr(b, "defaultAction", lambda: None)() is action
                     )
                     self.assertTrue(button.isVisible())
@@ -628,10 +627,9 @@ class DisabledIcons(QtCase):
     def test_a_disabled_icon_is_dimmed_not_faded_out(self):
         # At 40% the disabled Stop icon was grey 114 on 27 in dark mode (measured on screen)
         # and read as fuzzy (user report); dimmed icons still need text-level contrast
-        from PySide6.QtGui import QColor
-
         from diskcleaner_gui.qt_app.icons import DISABLED_OPACITY
         from diskcleaner_gui.qt_app.theme import THEMES, contrast
+        from PySide6.QtGui import QColor
 
         for name, t in THEMES.items():
             ink, panel = QColor(t["ink"]), QColor(t["panel"])
@@ -654,9 +652,8 @@ class IconTextAlignment(QtCase):
     def test_icons_beside_labels_drop_to_the_letters_centre(self):
         # Qt centres a label's line box (room for descenders) but an icon's glyph, so the
         # letters sat ~1 device px below their icons at 125% (measured: Clean 83.5 vs 82)
-        from PySide6.QtGui import QFont, QFontMetricsF
-
         from diskcleaner_gui.qt_app.icons import LABEL_FONT_PX, text_centre_drop
+        from PySide6.QtGui import QFont, QFontMetricsF
 
         font = QFont(self.app.font())
         font.setPixelSize(LABEL_FONT_PX)
@@ -688,9 +685,7 @@ class IconTextAlignment(QtCase):
 
         background = lum(2, height // 2)
         inked = [
-            x
-            for x in range(width)
-            if any(abs(lum(x, y) - background) > 60 for y in range(height))
+            x for x in range(width) if any(abs(lum(x, y) - background) > 60 for y in range(height))
         ]
         split = next(b for a, b in zip(inked, inked[1:]) if b - a >= 3)
 
