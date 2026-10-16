@@ -1,20 +1,27 @@
 """Code and docs are plain ASCII: no emojis, symbols, box drawing or em/en dashes."""
 
 import re
+import subprocess
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 TEXT_SUFFIXES = {".py", ".md", ".txt", ".zsh", ".sh", ".yml", ".yaml", ".toml", ".ini", ".cfg"}
-SKIP_DIRS = {".git", "__pycache__", ".pytest_cache", ".mypy_cache", "build", "dist"}
 NON_ASCII = re.compile(r"[^\x00-\x7F]")
 PROSE_DOUBLE_DASH = re.compile(r"\w -- \w")
 
 
 def text_files():
-    for path in REPO.rglob("*"):
-        if path.is_file() and not SKIP_DIRS.intersection(path.relative_to(REPO).parts):
-            if path.suffix in TEXT_SUFFIXES or path.name == "Makefile":
-                yield path
+    """Tracked and new (not ignored) files, so a local .venv or build output is skipped."""
+    listed = subprocess.run(
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+        cwd=REPO,
+        capture_output=True,
+        check=True,
+    ).stdout.decode("utf-8")
+    for name in filter(None, listed.split("\0")):
+        path = REPO / name
+        if path.is_file() and (path.suffix in TEXT_SUFFIXES or path.name in {"Makefile", ".flake8"}):
+            yield path
 
 
 def test_all_text_is_ascii():
