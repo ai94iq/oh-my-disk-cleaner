@@ -46,8 +46,9 @@ except Exception as e:
 class ProgressiveDiskAnalyzer:
     """Progressive disk analyzer - provides real-time feedback and early results"""
 
-    def __init__(self, target_path: str = None):
+    def __init__(self, target_path: str = None, include_windows: bool = False):
         self.target_path = Path(target_path or self._get_default_path()).resolve()
+        self.include_windows = include_windows
         self.platform = sys.platform
         self.results_shown = 0
         self.start_time = None
@@ -146,8 +147,9 @@ class ProgressiveDiskAnalyzer:
             Scan result dictionary
         """
         if DirectoryScanner is None:
-            safe_print("[X] Advanced scanning not available, using basic method")
-            return self._basic_scan()
+            raise SystemExit(
+                "[X] The bundled diskcleaner package did not import; run scripts/check_skill.py"
+            )
 
         # Set limits
         if max_files is None:
@@ -160,18 +162,21 @@ class ProgressiveDiskAnalyzer:
         safe_print("   Press Ctrl+C anytime to interrupt and view partial results\n")
 
         self.start_time = time.time()
-        results = {"directories": [], "files": [], "scanned": 0}
+        results = {"directories": [], "files": []}
+        # Bytes per top-level folder, summed from every file the scan sees
+        dir_totals: Dict[str, int] = {}
+        root_prefix = os.path.join(str(self.target_path), "")  # ends with one separator
+        file_count = 0
+        interrupted = False
+        scanner = DirectoryScanner(
+            str(self.target_path),
+            max_files=max_files,
+            max_seconds=max_seconds,
+            include_windows=self.include_windows,
+            cache_enabled=False,
+        )
 
         try:
-            scanner = DirectoryScanner(
-                str(self.target_path),
-                max_files=max_files,
-                max_seconds=max_seconds,
-                cache_enabled=False,
-            )
-
-            # Use generator for progressive processing
-            file_count = 0
             last_display_time = 0
             display_interval = 2.0  # Display progress every 2 seconds
 
@@ -195,47 +200,41 @@ class ProgressiveDiskAnalyzer:
                         }
                     )
 
-                # Collect directories (top-level only)
-                if file_info.is_dir and Path(file_info.path).parent == self.target_path:
-                    results["directories"].append(
-                        {
-                            "path": file_info.path,
-                            "name": file_info.name,
-                        }
-                    )
-
-            # Scan complete
-            elapsed = time.time() - self.start_time
-            self._show_progress(file_count, elapsed, True)
-
-            # Calculate directory sizes
-            results["directories"] = self._calculate_dir_sizes(results["directories"][:20])
-
-            # Sort and limit result count
-            results["files"].sort(key=lambda x: x["size_gb"], reverse=True)
-            results["directories"].sort(key=lambda x: x["size_gb"], reverse=True)
-
-            results["files"] = results["files"][:50]
-            results["directories"] = results["directories"][:50]
-
-            # Add scan information
-            results["scan_info"] = {
-                "files_scanned": file_count,
-                "scan_time_seconds": round(elapsed, 1),
-                "stopped_early": scanner.stopped_early,
-                "stop_reason": scanner.stop_reason if scanner.stopped_early else "",
-            }
+                # Add the file to its top-level folder's total. String slicing,
+                # not Path(): this runs once per file, millions of times.
+                if not file_info.is_dir:
+                    top, sep, _ = file_info.path[len(root_prefix) :].partition(os.sep)
+                    if sep:
+                        dir_totals[top] = dir_totals.get(top, 0) + file_info.size
 
         except KeyboardInterrupt:
-            safe_print("\n\n[!] Scan interrupted by user")
-            elapsed = time.time() - self.start_time
-            safe_print(f"   Scanned: {results.get('scanned', 0):,} files")
-            safe_print(f"   Time: {elapsed:.1f} seconds")
+            interrupted = True
+            safe_print("\n\n[!] Scan interrupted by user, showing partial results")
 
-        except Exception as e:
-            safe_print(f"\n[X] Scan error: {e}")
-            return self._basic_scan()
+        elapsed = time.time() - self.start_time
+        self._show_progress(file_count, elapsed, True)
 
+        # Sort on exact bytes; rounded GB would tie every folder under ~5 MB
+        largest_dirs = sorted(dir_totals.items(), key=lambda item: item[1], reverse=True)
+        results["directories"] = [
+            {
+                "path": str(self.target_path / name),
+                "name": name,
+                "size_gb": round(size / (1024**3), 2),
+                "size_mb": round(size / (1024**2), 2),
+            }
+            for name, size in largest_dirs[:50]
+        ]
+        results["files"].sort(key=lambda x: x["size_mb"], reverse=True)
+        results["files"] = results["files"][:50]
+
+        stopped_early = interrupted or scanner.stopped_early
+        results["scan_info"] = {
+            "files_scanned": file_count,
+            "scan_time_seconds": round(elapsed, 1),
+            "stopped_early": stopped_early,
+            "stop_reason": "interrupted" if interrupted else (scanner.stop_reason or ""),
+        }
         return results
 
     def _show_progress(self, file_count: int, elapsed: float, complete: bool = False):
@@ -244,100 +243,6 @@ class ProgressiveDiskAnalyzer:
             safe_print(f"\n[OK] Scan complete: {file_count:,} files, {elapsed:.1f} seconds")
         else:
             safe_print(f"   Scanning: {file_count:,} files, {elapsed:.1f} seconds... (continuing)")
-
-    def _calculate_dir_sizes(self, dirs: List[Dict], max_depth: int = 1) -> List[Dict]:
-        """Calculate directory sizes"""
-        results = []
-
-        for dir_info in dirs:
-            dir_path = Path(dir_info["path"])
-            try:
-                size = self._get_dir_size_fast(dir_path, max_depth)
-                if size > 0:
-                    results.append(
-                        {
-                            **dir_info,
-                            "size_gb": round(size / (1024**3), 2),
-                            "size_mb": round(size / (1024**2), 2),
-                        }
-                    )
-            except (PermissionError, OSError):
-                pass
-
-        return results
-
-    def _get_dir_size_fast(self, path: Path, max_depth: int = 1) -> int:
-        """Fast directory size calculation"""
-        total_size = 0
-        try:
-            with os.scandir(path) as it:
-                for entry in it:
-                    try:
-                        if entry.is_file(follow_symlinks=False):
-                            total_size += entry.stat().st_size
-                        elif entry.is_dir(follow_symlinks=False) and max_depth > 0:
-                            total_size += self._get_dir_size_fast(Path(entry.path), max_depth - 1)
-                    except (PermissionError, OSError):
-                        continue
-        except (PermissionError, OSError):
-            pass
-        return total_size
-
-    def _basic_scan(self) -> Dict:
-        """Basic scan method (when advanced features unavailable)"""
-        safe_print("\nUsing basic scan method...")
-
-        results = {"directories": [], "files": []}
-        file_count = 0
-
-        try:
-            # Only scan top level
-            for item in self.target_path.iterdir():
-                if item.is_dir() and not item.is_symlink():
-                    try:
-                        size = self._get_dir_size_fast(item, max_depth=1)
-                        if size > 1024 * 1024:  # > 1MB
-                            results["directories"].append(
-                                {
-                                    "path": str(item),
-                                    "name": item.name,
-                                    "size_gb": round(size / (1024**3), 2),
-                                    "size_mb": round(size / (1024**2), 2),
-                                }
-                            )
-                    except (PermissionError, OSError):
-                        pass
-                    file_count += 1
-                elif item.is_file():
-                    try:
-                        size = item.stat().st_size
-                        if size > 10 * 1024 * 1024:  # > 10MB
-                            results["files"].append(
-                                {
-                                    "path": str(item),
-                                    "name": item.name,
-                                    "size_gb": round(size / (1024**3), 2),
-                                    "size_mb": round(size / (1024**2), 2),
-                                }
-                            )
-                    except (PermissionError, OSError):
-                        pass
-                    file_count += 1
-
-        except Exception as e:
-            safe_print(f"Basic scan also failed: {e}")
-
-        results["directories"].sort(key=lambda x: x["size_gb"], reverse=True)
-        results["files"].sort(key=lambda x: x["size_gb"], reverse=True)
-
-        results["scan_info"] = {
-            "files_scanned": file_count,
-            "scan_time_seconds": 0,
-            "stopped_early": False,
-            "stop_reason": "",
-        }
-
-        return results
 
     def format_report(self, results: Dict) -> str:
         """Format report"""
@@ -409,10 +314,15 @@ Examples:
     parser.add_argument("--max-seconds", type=int, default=30, help="Maximum time limit-seconds (default: 30)")
     parser.add_argument("--json", action="store_true", help="JSON output")
     parser.add_argument("--no-progress", action="store_true", help="Disable progress")
+    parser.add_argument(
+        "--include-windows",
+        action="store_true",
+        help="Include Windows system directories (C:\\Windows, Program Files, etc.) in scan",
+    )
 
     args = parser.parse_args()
 
-    analyzer = ProgressiveDiskAnalyzer(args.path)
+    analyzer = ProgressiveDiskAnalyzer(args.path, include_windows=args.include_windows)
 
     # Quick sample mode
     if args.sample:
