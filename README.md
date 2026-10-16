@@ -64,7 +64,7 @@ python scripts/monitor_disk.py --warning 80 --critical 90
 
 `monitor_disk.py` exits 0 when every drive is fine, 1 at the warning
 threshold and 2 at the critical one. [SKILL.md](skills/disk-cleaner/SKILL.md)
-lists every script and flag and the workflow an agent follows.
+lists every script with its key flags, and the workflow an agent follows.
 
 ## Safety
 

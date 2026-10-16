@@ -26,7 +26,7 @@ python scripts/interactive_wizard.py ~/Downloads     # a given folder
 
 | Mode | Limit | Use for |
 |---|---|---|
-| 1. Quick | 10,000 files or 1 second | A fast look at common temp locations |
+| 1. Quick | 10,000 files or 1 second | A fast first look at the folder |
 | 2. Standard | 100,000 files or 120 seconds, cached | Most folders (recommended) |
 | 3. Deep | No file or time limit, cached | A thorough cleanup; can take long |
 | 4. Progressive | Cached incremental scan | Repeat scans of the same folder |
@@ -84,6 +84,6 @@ scan:
 ## Tests
 
 ```bash
-python scripts/test_wizard.py
-python -m pytest tests/test_interactive.py tests/test_interactive_cleanup.py
+python scripts/test_wizard.py                     # from the skill folder
+python -m pytest tests/test_interactive.py tests/test_interactive_cleanup.py   # from the repo root
 ```

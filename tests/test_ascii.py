@@ -20,7 +20,9 @@ def text_files():
     ).stdout.decode("utf-8")
     for name in filter(None, listed.split("\0")):
         path = REPO / name
-        if path.is_file() and (path.suffix in TEXT_SUFFIXES or path.name in {"Makefile", ".flake8"}):
+        if path.is_file() and (
+            path.suffix in TEXT_SUFFIXES or path.name in {"Makefile", ".flake8"}
+        ):
             yield path
 
 
