@@ -78,13 +78,20 @@ def test_alias_of_user_protected_folder_is_protected(tmp_path):
     assert is_protected(alias, [keep], []) is True
 
 
-def test_check_is_fast_enough_for_large_scans(tmp_path):
-    import time
+def test_builtin_lists_are_built_once_not_per_call(tmp_path, monkeypatch):
+    # Rebuilding and resolving the defaults on every call cost ~2 ms each, minutes
+    # over a large scan. Count the rebuilds instead of timing (CI runners vary).
+    import diskcleaner.core.safety as safety
 
-    start = time.perf_counter()
-    for _ in range(1000):
+    is_protected(tmp_path / "warm.log", [], [])
+    calls = []
+    real = safety.get_protected_paths
+    monkeypatch.setattr(safety, "get_protected_paths", lambda: calls.append(1) or real())
+
+    for _ in range(100):
         is_protected(tmp_path / "a.log", [], [])
-    assert time.perf_counter() - start < 0.5
+
+    assert calls == []
 
 
 def test_config_cannot_remove_builtin_protection(tmp_path):
