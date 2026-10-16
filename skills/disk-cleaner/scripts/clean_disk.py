@@ -6,6 +6,7 @@ Safely removes temporary files, caches, logs, and other junk files
 Enhanced with progress bars for better user feedback.
 """
 
+import glob
 import json
 import os
 import platform
@@ -234,7 +235,18 @@ class DiskCleaner:
                     "Default",
                     "Cache",
                 ),
-                os.path.join(os.environ.get("APPDATA", ""), "Mozilla", "Firefox", "Profiles"),
+                # Only each profile's cache2; the profiles themselves hold bookmarks
+                # and passwords
+                *glob.glob(
+                    os.path.join(
+                        glob.escape(os.environ.get("LOCALAPPDATA", "")),
+                        "Mozilla",
+                        "Firefox",
+                        "Profiles",
+                        "*",
+                        "cache2",
+                    )
+                ),
                 os.path.join(
                     os.environ.get("LOCALAPPDATA", ""),
                     "Microsoft",
@@ -289,13 +301,8 @@ class DiskCleaner:
                 ]
             )
 
-            # User logs
+            # User logs (iPhone backups in MobileSync are user data, never cache)
             locations["logs"].append(os.path.expanduser("~/Library/Logs"))
-
-            # iOS device backups
-            backup_path = os.path.expanduser("~/Library/Application Support/MobileSync/Backup")
-            if os.path.exists(backup_path):
-                locations["cache"].append(backup_path)
 
         else:  # Linux
             # System temp and cache

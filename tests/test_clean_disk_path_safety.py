@@ -64,6 +64,36 @@ def test_custom_path_refuses_aliases_of_home_and_system(clean_disk, cleaner):
             cleaner.validate_custom_path(alias, allow_unsafe=True)
 
 
+def test_cache_locations_hold_no_user_data(clean_disk, tmp_path, monkeypatch):
+    roaming, local = tmp_path / "Roaming", tmp_path / "Local"
+    (roaming / "Mozilla" / "Firefox" / "Profiles" / "abc.default").mkdir(parents=True)
+    cache2 = local / "Mozilla" / "Firefox" / "Profiles" / "abc.default" / "cache2"
+    cache2.mkdir(parents=True)
+    monkeypatch.setenv("APPDATA", str(roaming))
+    monkeypatch.setenv("LOCALAPPDATA", str(local))
+    cleaner = clean_disk.DiskCleaner(show_progress=False)
+    cleaner.system = "windows"
+
+    cache = cleaner.get_cleanable_locations()["cache"]
+
+    assert str(cache2) in cache
+    assert not any("Firefox" in path and "cache2" not in path for path in cache)
+
+
+def test_iphone_backups_are_not_cache(clean_disk, tmp_path, monkeypatch):
+    home = tmp_path / "home"
+    (home / "Library" / "Application Support" / "MobileSync" / "Backup").mkdir(parents=True)
+    monkeypatch.setattr(
+        os.path, "expanduser", lambda p: str(home) + p[1:] if p.startswith("~") else p
+    )
+    cleaner = clean_disk.DiskCleaner(show_progress=False)
+    cleaner.system = "darwin"
+
+    locations = cleaner.get_cleanable_locations()
+
+    assert not any("MobileSync" in path for paths in locations.values() for path in paths)
+
+
 def test_clean_directory_refuses_a_protected_root(clean_disk, tmp_path, monkeypatch):
     home = tmp_path / "home"
     home.mkdir()
