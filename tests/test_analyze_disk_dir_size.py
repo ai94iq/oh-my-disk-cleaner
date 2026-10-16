@@ -8,6 +8,7 @@ ranking silently pointed away from what actually filled the disk.
 """
 
 import importlib.util
+import sys
 from pathlib import Path
 
 import pytest
@@ -68,3 +69,21 @@ def test_explicit_depth_limit_still_truncates(analyzer, tmp_path):
     assert analyzer._get_dir_size_fast(tmp_path, max_depth=1) == 1024
     # depth 2: reaches the file two levels down.
     assert analyzer._get_dir_size_fast(tmp_path, max_depth=2) == 1024 + 4096
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows junctions")
+def test_size_walk_does_not_follow_junctions(analyzer, tmp_path):
+    import subprocess
+
+    _write(tmp_path / "data" / "f.bin", 1024 * 1024)
+    link = tmp_path / "root" / "alias"
+    link.parent.mkdir()
+    created = subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(link), str(tmp_path / "data")],
+        capture_output=True,
+        text=True,
+    )
+    if created.returncode != 0:
+        pytest.skip(f"Cannot create a junction: {created.stderr.strip()}")
+
+    assert analyzer._get_dir_size_fast(tmp_path / "root") == 0

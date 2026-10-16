@@ -44,6 +44,8 @@ except Exception as e:
     DuplicateFinder = None
     print(f"[Warning] Cannot import the bundled diskcleaner package: {e}", file=sys.stderr)
 
+from diskcleaner.core.scanner import is_link_entry  # noqa: E402
+
 
 class DiskAnalyzer:
     def __init__(
@@ -376,6 +378,8 @@ class DiskAnalyzer:
             with os.scandir(path) as it:
                 for entry in it:
                     try:
+                        if is_link_entry(entry):
+                            continue
                         if entry.is_file(follow_symlinks=False):
                             total_size += entry.stat().st_size
                         elif entry.is_dir(follow_symlinks=False) and (

@@ -13,6 +13,7 @@ Performance optimizations:
 
 import os
 import platform
+import stat
 import time
 from dataclasses import dataclass
 from pathlib import Path
@@ -62,6 +63,19 @@ PLATFORM_EXCLUDES = {
         "/etc",
     ],
 }
+
+
+def _is_junction(stat_info: os.stat_result) -> bool:
+    """Windows directory junction (mount-point reparse tag). Other reparse points,
+    such as OneDrive on-demand files, are real files and are not treated as links."""
+    tag = getattr(stat_info, "st_reparse_tag", 0)
+    return bool(tag) and tag == getattr(stat, "IO_REPARSE_TAG_MOUNT_POINT", -1)
+
+
+def is_link_entry(entry: os.DirEntry) -> bool:
+    """Symlink or Windows junction. Directory walks must not descend into either:
+    on Windows, entry.is_dir(follow_symlinks=False) is True for a junction."""
+    return entry.is_symlink() or _is_junction(entry.stat(follow_symlinks=False))
 
 
 def should_exclude_path(path: Path, include_windows: bool = False) -> bool:
@@ -351,7 +365,9 @@ class DirectoryScanner:
 
                         # Check for symlink cycles
                         # Note: DirEntry.is_symlink() doesn't take arguments
-                        is_link = entry.is_symlink()
+                        # Windows junctions are links too, though is_symlink() says no;
+                        # following them double counts and can loop
+                        is_link = is_link_entry(entry)
                         if is_link:
                             if not self.follow_symlinks:
                                 continue

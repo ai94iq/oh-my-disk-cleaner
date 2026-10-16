@@ -17,6 +17,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from diskcleaner.core.scanner import is_link_entry
 from diskcleaner.optimization.memory import MemoryMonitor
 
 # Re-export for convenience
@@ -300,7 +301,7 @@ class ConcurrentScanner:
                                     stats["size"] += item.size
 
                                 # Add subdirectories to work queue
-                                if entry.is_dir(follow_symlinks=False):
+                                if entry.is_dir(follow_symlinks=False) and not is_link_entry(entry):
                                     if not self.strategy.should_exclude(entry.path):
                                         dir_entries.append(entry.path)
 
@@ -366,7 +367,7 @@ class ConcurrentScanner:
                             stats["size"] += item.size
 
                         # Add directory to work queue
-                        if entry.is_dir(follow_symlinks=False):
+                        if entry.is_dir(follow_symlinks=False) and not is_link_entry(entry):
                             if not self.strategy.should_exclude(entry.path):
                                 work_queue.put(entry.path)
 

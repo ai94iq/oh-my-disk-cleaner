@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPT = (
     Path(__file__).resolve().parent.parent
     / "skills"
@@ -44,6 +46,33 @@ def test_dir_totals_full_depth(tmp_path):
     assert results["directories"][0]["name"] == "zbig"
     assert 2.9 <= sizes["zbig"] <= 3.1
     assert 0.9 <= sizes["asmall"] <= 1.1
+
+
+def make_junction(link: Path, target: Path):
+    created = subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(link), str(target)], capture_output=True, text=True
+    )
+    if created.returncode != 0:
+        pytest.skip(f"Cannot create a junction: {created.stderr.strip()}")
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows junctions")
+def test_junctions_are_not_followed(tmp_path):
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "f.bin").write_bytes(b"x" * 1024 * 1024)
+    make_junction(tmp_path / "alias", tmp_path / "data")
+    loop_dir = tmp_path / "cyc" / "d"
+    loop_dir.mkdir(parents=True)
+    (loop_dir / "g.bin").write_bytes(b"x" * 1024 * 1024)
+    make_junction(loop_dir / "loop", tmp_path / "cyc")
+
+    analyzer = load_script().ProgressiveDiskAnalyzer(str(tmp_path))
+    results = analyzer.progressive_scan(max_files=10**6, max_seconds=30, show_progress=False)
+
+    sizes = {d["name"]: d["size_mb"] for d in results["directories"]}
+    assert 0.9 <= sizes["data"] <= 1.1
+    assert sizes.get("alias", 0) < 0.1
+    assert 0.9 <= sizes["cyc"] <= 1.1
 
 
 def test_include_windows_reaches_the_scanner(tmp_path, monkeypatch):

@@ -8,8 +8,11 @@ Tests:
 - ScanStrategy
 """
 
+import sys
 import time
 from pathlib import Path
+
+import pytest
 
 from diskcleaner.optimization.scan import (
     ConcurrentScanner,
@@ -452,3 +455,24 @@ class TestScanSnapshot:
         assert snapshot.path == "/test"
         assert len(snapshot.items) == 1
         assert isinstance(snapshot.items[0], FileInfo)
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="Windows junctions")
+def test_concurrent_scanner_does_not_follow_junctions(tmp_path):
+    import subprocess
+
+    (tmp_path / "data").mkdir()
+    (tmp_path / "data" / "f.bin").write_bytes(b"x" * 1024)
+    created = subprocess.run(
+        ["cmd", "/c", "mklink", "/J", str(tmp_path / "alias"), str(tmp_path / "data")],
+        capture_output=True,
+        text=True,
+    )
+    if created.returncode != 0:
+        pytest.skip(f"Cannot create a junction: {created.stderr.strip()}")
+
+    result = ConcurrentScanner().scan(tmp_path)
+
+    names = sorted(Path(item.path).relative_to(tmp_path).as_posix() for item in result.items)
+    assert "alias/f.bin" not in names
+    assert "data/f.bin" in names
