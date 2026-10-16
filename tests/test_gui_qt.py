@@ -622,3 +622,29 @@ class SharpIcons(QtCase):
 
         self.assertEqual(device_origin(10, 1.25), 10.4)
         self.assertEqual(device_origin(8, 1.0), 8)
+
+
+class DisabledIcons(QtCase):
+    def test_a_disabled_icon_is_dimmed_not_faded_out(self):
+        # At 40% the disabled Stop icon was grey 114 on 27 in dark mode (measured on screen)
+        # and read as fuzzy (user report); dimmed icons still need text-level contrast
+        from PySide6.QtGui import QColor
+
+        from diskcleaner_gui.qt_app.icons import DISABLED_OPACITY
+        from diskcleaner_gui.qt_app.theme import THEMES, contrast
+
+        for name, t in THEMES.items():
+            ink, panel = QColor(t["ink"]), QColor(t["panel"])
+            mixed = QColor(
+                *(
+                    round(DISABLED_OPACITY * a + (1 - DISABLED_OPACITY) * b)
+                    for a, b in (
+                        (ink.red(), panel.red()),
+                        (ink.green(), panel.green()),
+                        (ink.blue(), panel.blue()),
+                    )
+                )
+            )
+            with self.subTest(theme=name):
+                self.assertGreaterEqual(contrast(mixed.name(), t["panel"]), 4.5)
+                self.assertLess(DISABLED_OPACITY, 1)  # still visibly dimmed

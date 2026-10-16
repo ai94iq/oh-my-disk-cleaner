@@ -34,6 +34,8 @@ ICON_NAMES = {
     "target": "hard-drive",
     "folder": "folder-open",
 }
+# Disabled icons are dimmed, not faded: 0.4 read as fuzzy on screen (user report)
+DISABLED_OPACITY = 0.7
 BRAND = "#4361ee"  # the app icon's background; keep it equal to the light theme's accent
 
 
@@ -176,7 +178,10 @@ class SvgIconEngine(QIconEngine):
         renderer = QSvgRenderer(
             QByteArray(
                 svg_bytes(
-                    self.name, color, 0.4 if mode == QIcon.Mode.Disabled else 1.0, side * ratio
+                    self.name,
+                    color,
+                    DISABLED_OPACITY if mode == QIcon.Mode.Disabled else 1.0,
+                    side * ratio,
                 )
             )
         )
