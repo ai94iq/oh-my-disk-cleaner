@@ -64,6 +64,25 @@ def test_custom_path_refuses_aliases_of_home_and_system(clean_disk, cleaner):
             cleaner.validate_custom_path(alias, allow_unsafe=True)
 
 
+def test_folder_cleanup_keeps_protected_files_inside(clean_disk, tmp_path):
+    root = tmp_path / "cache"
+    sub = root / "{guid}" / "nested"
+    sub.mkdir(parents=True)
+    (sub / "setup.exe").write_bytes(b"keep")
+    (sub / "image.iso").write_bytes(b"keep")
+    (sub / "junk.tmp").write_bytes(b"x" * 1024)
+    (root / "empty" / "deeper").mkdir(parents=True)
+
+    preview = clean_disk.DiskCleaner(dry_run=True, show_progress=False).clean_directory(str(root))
+    result = clean_disk.DiskCleaner(dry_run=False, show_progress=False).clean_directory(str(root))
+
+    assert (sub / "setup.exe").exists()
+    assert (sub / "image.iso").exists()
+    assert not (sub / "junk.tmp").exists()
+    assert not (root / "empty").exists()
+    assert result["space_freed_mb"] == preview["space_freed_mb"]
+
+
 def test_cache_locations_hold_no_user_data(clean_disk, tmp_path, monkeypatch):
     roaming, local = tmp_path / "Roaming", tmp_path / "Local"
     (roaming / "Mozilla" / "Firefox" / "Profiles" / "abc.default").mkdir(parents=True)
@@ -196,10 +215,10 @@ def test_recursive_delete_failure_is_reported(clean_disk, tmp_path, monkeypatch)
     nested = root / "nested"
     nested.mkdir(parents=True)
 
-    def fail_delete(path):
+    def fail_delete(self, path):
         raise OSError("delete failed")
 
-    monkeypatch.setattr(clean_disk.shutil, "rmtree", fail_delete)
+    monkeypatch.setattr(clean_disk.DiskCleaner, "_remove_tree", fail_delete)
     result = clean_disk.DiskCleaner(dry_run=False, show_progress=False).clean_directory(str(root))
 
     assert result["files_deleted"] == 0

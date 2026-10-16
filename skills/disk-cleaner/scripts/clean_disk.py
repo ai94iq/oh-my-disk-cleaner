@@ -10,7 +10,6 @@ import glob
 import json
 import os
 import platform
-import shutil
 import stat
 import sys
 from datetime import datetime, timedelta
@@ -128,11 +127,45 @@ class DiskCleaner:
             with os.scandir(str(pending.pop())) as entries:
                 for entry in entries:
                     metadata = entry.stat(follow_symlinks=False)
-                    if stat.S_ISDIR(metadata.st_mode) and not self._is_reparse_point(metadata):
+                    if self._is_link(metadata):
+                        total += metadata.st_size
+                    elif stat.S_ISDIR(metadata.st_mode):
                         pending.append(Path(entry.path))
-                    else:
+                    elif self._is_safe_to_delete(Path(entry.path)):
+                        # Protected files inside are kept by _remove_tree, so not counted
                         total += metadata.st_size
         return total
+
+    def _is_link(self, metadata: os.stat_result) -> bool:
+        """Symlink or Windows reparse point (junction): removed as a link, never entered."""
+        return stat.S_ISLNK(metadata.st_mode) or self._is_reparse_point(metadata)
+
+    def _remove_link(self, path: Path, metadata: os.stat_result) -> None:
+        """Remove a link itself; a directory junction needs rmdir on Windows."""
+        if stat.S_ISDIR(metadata.st_mode) and not stat.S_ISLNK(metadata.st_mode):
+            path.rmdir()
+        else:
+            path.unlink()
+
+    def _remove_tree(self, path: Path) -> None:
+        """
+        Remove a folder's contents bottom-up, checking every file.
+
+        Protected files (executables, installers, disk images) stay, and so
+        do the folders that still hold them. Links are removed as links.
+        """
+        with os.scandir(str(path)) as entries:
+            for entry in entries:
+                child = Path(entry.path)
+                metadata = entry.stat(follow_symlinks=False)
+                if self._is_link(metadata):
+                    self._remove_link(child, metadata)
+                elif stat.S_ISDIR(metadata.st_mode):
+                    self._remove_tree(child)
+                elif self._is_safe_to_delete(child):
+                    child.unlink()
+        if not any(path.iterdir()):
+            path.rmdir()
 
     def validate_custom_path(
         self,
@@ -424,16 +457,10 @@ class DiskCleaner:
                         result["files_deleted"] += 1
                         result["space_freed_mb"] += size / (1024 * 1024)
                     else:
-                        if stat.S_ISLNK(metadata.st_mode):
-                            item.unlink()
-                        elif self._is_reparse_point(metadata):
-                            if stat.S_ISDIR(metadata.st_mode):
-                                item.rmdir()
-                            else:
-                                item.unlink()
+                        if self._is_link(metadata):
+                            self._remove_link(item, metadata)
                         elif stat.S_ISDIR(metadata.st_mode):
-                            # Python 3.8+ removes Windows junctions without entering them
-                            shutil.rmtree(item)
+                            self._remove_tree(item)
                         else:
                             item.unlink()
 
