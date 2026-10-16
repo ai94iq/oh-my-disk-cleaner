@@ -29,6 +29,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is removed; locked files are skipped.
 - CI actions and pre-commit hooks are pinned by commit SHA; workflows run with
   read-only permissions.
+- Protection holds for every spelling of a path (`\\?\C:\...`,
+  `\\localhost\C$\...`), compared by file identity.
+- Cache cleaning no longer touches Firefox profiles (only `cache2`) or iPhone
+  backups. Browser history (`History`, `WebCache`) is cleaned only with
+  `--browser-history`.
+- Folder cleanup checks every file inside, so executables, installers and disk
+  images inside a cleaned folder are kept.
+- The Windows lock check detects files open in other programs.
 
 ### Changed
 - Python 3.11 or newer (3.10 reached end of life in October 2026); dev and
@@ -46,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `analyze_progressive.py` crashed on import; its folder totals now cover
   every top-level folder at full depth, sort on exact bytes, survive Ctrl+C,
   and `--include-windows` counts system folders.
+- Directory walks no longer follow Windows junctions (double counting, loops).
+- Broken links are removed as links, and a link's age is its own.
+- Wizard backups older than `safety.backup_retention_days` (30) are pruned.
+- The fake full-scan time estimate is gone; one size format everywhere; small
+  and empty folders show in the progressive report.
 - **Directory sizing undercounted deep trees** - `DiskAnalyzer._get_dir_size_fast`
   defaulted to `max_depth=1`, so the "Largest Directories" ranking stopped
   measuring after two levels and reported deeply nested content (Wine prefixes,
