@@ -14,7 +14,7 @@ from gui_fakes import FakeService  # noqa: E402
 from PySide6.QtCore import QEvent, QObject, QPoint, QSettings, Qt, Signal  # noqa: E402
 from PySide6.QtGui import QIcon  # noqa: E402
 from PySide6.QtTest import QTest  # noqa: E402
-from PySide6.QtWidgets import QApplication, QMenu, QStyle, QToolTip  # noqa: E402
+from PySide6.QtWidgets import QAbstractButton, QApplication, QMenu, QStyle, QToolTip  # noqa: E402
 
 
 class FakeWorker(QObject):
@@ -466,3 +466,130 @@ class StalePreview(QtCase):
         self.assertEqual(self.window.preview.stack.currentIndex(), 0)
         self.assertEqual(self.window.preview_empty.title.text(), "Cleaned")
         self.assertEqual(self.window.total.isVisibleTo(self.window), False)
+
+
+class DarkFills(QtCase):
+    def rule(self, selector):
+        return self.app.styleSheet().split(selector + " {", 1)[1].split("}", 1)[0]
+
+    def test_filled_controls_carry_white_text_in_both_themes(self):
+        # Dark mode drew near-black text on light blue for the selected tab and the
+        # main button (accent_ink on accent), which read as too dark (user report)
+        from diskcleaner_gui.qt_app.theme import THEMES, contrast
+
+        for name, t in THEMES.items():
+            with self.subTest(theme=name):
+                self.assertGreaterEqual(contrast(t["fill_ink"], t["fill"]), 4.5)
+                self.assertGreaterEqual(contrast(t["fill"], t["panel"]), 3)
+                self.window.set_theme(name)
+                for selector in (
+                    "QToolBar#shell QFrame#seg QToolButton:checked",
+                    "QFrame#bar QToolButton#primary",
+                ):
+                    self.assertIn(f"background: {t['fill']}", self.rule(selector))
+                    self.assertIn(f"color: {t['fill_ink']}", self.rule(selector))
+
+    def test_a_running_main_button_stays_readable(self):
+        self.window.set_theme("dark")
+        t = self.window.t
+        rule = self.rule("QFrame#bar QToolButton#primary:disabled")
+        self.assertIn(f"background: {t['raised']}", rule)
+        self.assertIn(f"color: {t['ink2']}", rule)
+
+
+class Busy(QtCase):
+    def test_a_scan_fills_the_tables_with_progress_until_it_ends(self):
+        self.window.show()
+        self.window.analyze_action.trigger()
+        self.assertTrue(self.window.busy_bar.isVisible())
+        empty = self.window.folders.stack.widget(0)
+        self.assertEqual(empty.title.text(), "Scanning C:\\")
+        self.window.scanned = 4321
+        self.window._tick()
+        self.assertEqual(empty.text.text(), "4,321 files so far")
+        self.finish()
+        self.assertFalse(self.window.busy_bar.isVisible())
+        self.assertEqual(self.window.folders.stack.currentIndex(), 1)
+
+    def test_preview_and_find_show_what_they_are_doing(self):
+        self.window.show()
+        self.window.clean_page.trigger()
+        self.window.preview_action.trigger()
+        self.assertTrue(self.window.busy_bar.isVisible())
+        self.assertEqual(
+            self.window.preview_empty.title.text(), "Counting what Clean would remove"
+        )
+        self.finish()
+        self.window.dup_page.trigger()
+        self.window.find_action.trigger()
+        self.assertEqual(self.window.groups.stack.widget(0).title.text(), "Looking for duplicates")
+        self.finish()
+        self.assertFalse(self.window.busy_bar.isVisible())
+
+    def test_a_failed_scan_ends_the_progress_and_restores_the_empty_state(self):
+        from diskcleaner_gui.qt_app.worker import Worker
+
+        window = self.new_window(worker=Worker(), service=FakeService(error=ValueError("gone")))
+        window.show()
+        window.analyze_action.trigger()
+        self.assertFalse(window.busy_bar.isVisible())
+        self.assertEqual(window.folders.stack.widget(0).title.text(), "No scan yet")
+
+
+class Resize(QtCase):
+    def test_the_page_switch_stays_on_screen_in_a_narrow_window(self):
+        # At 640 px the toolbar overflowed and Qt hid the whole page switch (user report)
+        self.window.show()
+        for width in (1400, 1100, 800):
+            with self.subTest(width=width):
+                self.window.resize(width, 480)
+                self.app.processEvents()
+                for action in (self.window.analyze_page, self.window.clean_page):
+                    button = self.window.toolbar.widgetForAction(action) or next(
+                        b for b in self.window.findChildren(QAbstractButton)
+                        if getattr(b, "defaultAction", lambda: None)() is action
+                    )
+                    self.assertTrue(button.isVisible())
+                self.assertTrue(self.window.theme_button.isVisible())
+                overflow = self.window.toolbar.findChild(QAbstractButton, "qt_toolbar_ext_button")
+                self.assertFalse(overflow is not None and overflow.isVisible())
+
+    @unittest.skipIf(
+        os.environ.get("QT_QPA_PLATFORM") == "offscreen",
+        "offscreen fonts measure ~2x wide, so 640 px cannot be judged there",
+    )
+    def test_640_px_keeps_everything_on_screen_on_a_real_display(self):
+        self.window.show()
+        self.window.resize(640, 480)
+        self.app.processEvents()
+        self.assertEqual(self.window.width(), 640)
+        self.assertTrue(self.window.seg.isVisible() and self.window.theme_button.isVisible())
+        self.assertFalse(self.window._toolbar_overflows())
+
+    def test_full_labels_show_when_there_is_room(self):
+        # Offscreen Qt has no real fonts: its text measures about twice as wide as on
+        # Windows (product name 229 vs 116 px, measured), so "room" here is 1400 px
+        self.window.show()
+        self.window.resize(1400, 720)
+        self.app.processEvents()
+        self.assertTrue(self.window.product.isVisible())
+        button = self.window.seg.findChildren(QAbstractButton)[0]
+        self.assertEqual(button.toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+
+    def test_cards_stack_in_a_narrow_window_and_sit_side_by_side_in_a_wide_one(self):
+        self.window.show()
+        self.window.resize(700, 600)
+        self.app.processEvents()
+        self.assertTrue(all(s.orientation() == Qt.Orientation.Vertical for s in self.window.splits))
+        self.window.resize(1100, 720)
+        self.app.processEvents()
+        self.assertTrue(
+            all(s.orientation() == Qt.Orientation.Horizontal for s in self.window.splits)
+        )
+
+    def test_a_narrow_window_can_shrink_to_640_once_the_cards_stack(self):
+        self.window.show()
+        self.window.resize(700, 600)
+        self.app.processEvents()
+        self.window._say("a status line far longer than any window is wide " * 10)
+        self.assertLessEqual(self.window.minimumSizeHint().width(), 640)

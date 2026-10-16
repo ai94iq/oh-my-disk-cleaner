@@ -26,6 +26,8 @@ THEMES = {
         "bad": "#e5484d",
         "bad_soft": "#fde4e5",
         "bad_text": "#b4232a",
+        "fill": "#4361ee",
+        "fill_ink": "#ffffff",
         "ok": "#137538",
         "ok_soft": "#dcf5e5",
         "warn": "#a14a06",
@@ -53,6 +55,8 @@ THEMES = {
         "bad": "#ff6369",
         "bad_soft": "#3a1d20",
         "bad_text": "#ff6369",
+        "fill": "#4361ee",
+        "fill_ink": "#ffffff",
         "ok": "#3ecf8e",
         "ok_soft": "#16342a",
         "warn": "#f5b14c",
@@ -93,10 +97,11 @@ QToolBar#shell QToolButton:checked, QFrame#bar QToolButton:checked {{ background
 QToolBar#shell QToolButton:disabled, QFrame#bar QToolButton:disabled {{ color: {ink3}; }}
 QToolBar#shell QToolButton:focus, QFrame#bar QToolButton:focus {{ border-color: {accent}; }}
 QFrame#bar QToolButton {{ padding: 4px 6px; font-size: 12px; }}
-QFrame#bar QToolButton#primary {{ background: {accent}; color: {accent_ink}; font-weight: 600;
+/* filled controls: white on one blue in both themes (dark's light accent made dark text) */
+QFrame#bar QToolButton#primary {{ background: {fill}; color: {fill_ink}; font-weight: 600;
     padding: 4px 10px; }}
-QFrame#bar QToolButton#primary:hover {{ background: {select}; }}
-QFrame#bar QToolButton#primary:disabled {{ background: {accent_soft}; color: {accent_text}; }}
+QFrame#bar QToolButton#primary:hover {{ background: {fill}; border-color: {accent}; }}
+QFrame#bar QToolButton#primary:disabled {{ background: {raised}; color: {ink2}; border-color: {line}; }}
 QFrame#bar QToolButton#danger:enabled {{ background: {bad_soft}; color: {bad_text}; font-weight: 600;
     padding: 4px 10px; }}
 QLabel#warn_chip {{ background: {warn_soft}; color: {warn}; font-size: 11px; font-weight: 600;
@@ -105,7 +110,9 @@ QToolBar#shell QToolButton::menu-indicator {{ image: none; width: 0px; }}
 QFrame#seg {{ background: {raised}; border: 1px solid {line}; border-radius: 11px; }}
 QToolBar#shell QFrame#seg QToolButton {{ border-radius: 8px; padding: 5px 14px; }}
 QToolBar#shell QFrame#seg QToolButton:hover {{ background: {hover}; }}
-QToolBar#shell QFrame#seg QToolButton:checked {{ background: {accent}; color: {accent_ink}; }}
+QToolBar#shell QFrame#seg QToolButton:checked {{ background: {fill}; color: {fill_ink}; }}
+QProgressBar#busy {{ background: {raised}; border: 0; border-radius: 2px; max-height: 4px; }}
+QProgressBar#busy::chunk {{ background: {fill}; border-radius: 2px; }}
 QFrame#pill {{ background: {raised}; border: 1px solid {line}; border-radius: 14px; }}
 QFrame#pill QLabel {{ background: transparent; }}
 QFrame#pill[menu="true"]:hover {{ background: {hover}; }}
