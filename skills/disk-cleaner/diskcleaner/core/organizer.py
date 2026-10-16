@@ -351,6 +351,21 @@ class FileOrganizer:
 
         return organized, skipped, errors
 
+    @staticmethod
+    def _free_destination(destination: Path) -> Path:
+        """Return destination, or name_<timestamp>[_n].ext if taken; never an existing file."""
+        if not destination.exists():
+            return destination
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        candidate = destination.with_name(f"{destination.stem}_{timestamp}{destination.suffix}")
+        counter = 1
+        while candidate.exists():
+            candidate = destination.with_name(
+                f"{destination.stem}_{timestamp}_{counter}{destination.suffix}"
+            )
+            counter += 1
+        return candidate
+
     def _move_file(self, action: OrganizationAction):
         """
         Move a file to its destination.
@@ -364,14 +379,7 @@ class FileOrganizer:
         # Create destination directory
         destination.parent.mkdir(parents=True, exist_ok=True)
 
-        # Handle duplicates
-        if destination.exists():
-            # Add timestamp to filename
-            stem = source.stem
-            suffix = source.suffix
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            new_name = f"{stem}_{timestamp}{suffix}"
-            destination = destination.parent / new_name
+        destination = self._free_destination(destination)
 
         # Move file
         shutil.move(str(source), str(destination))
@@ -389,14 +397,7 @@ class FileOrganizer:
         # Create destination directory
         destination.parent.mkdir(parents=True, exist_ok=True)
 
-        # Handle duplicates
-        if destination.exists():
-            # Add timestamp to filename
-            stem = source.stem
-            suffix = source.suffix
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            new_name = f"{stem}_{timestamp}{suffix}"
-            destination = destination.parent / new_name
+        destination = self._free_destination(destination)
 
         # Copy file
         shutil.copy2(str(source), str(destination))

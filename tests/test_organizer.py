@@ -15,6 +15,24 @@ from diskcleaner.core.organizer import FileOrganizer, OrganizationAction, Organi
 from diskcleaner.core.scanner import FileInfo
 
 
+def test_same_name_moves_and_copies_never_overwrite(tmp_path):
+    dest_dir = tmp_path / "sorted"
+    organizer = FileOrganizer(str(tmp_path), strategy="desktop")
+    contents = []
+    for i in range(3):
+        src = tmp_path / f"src{i}" / "a.txt"
+        src.parent.mkdir()
+        src.write_text(f"file {i}", encoding="utf-8")
+        contents.append(f"file {i}")
+        info = FileInfo(path=str(src), name="a.txt", size=6, mtime=0.0, is_dir=False, is_link=False)
+        action = OrganizationAction(str(src), str(dest_dir / "a.txt"), "move", "test", info)
+        # Three in the same second: a timestamp alone would collide
+        (organizer._move_file if i < 2 else organizer._copy_file)(action)
+
+    kept = sorted(p.read_text(encoding="utf-8") for p in dest_dir.iterdir())
+    assert kept == contents
+
+
 @pytest.fixture
 def temp_directory():
     """Create temporary directory for testing."""
