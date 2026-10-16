@@ -103,9 +103,17 @@ class Pill(QFrame):
         row.addStretch(1)              # the pill is as wide as its menu: spare room goes before the chevron
         row.addWidget(self.chevron)
 
+        self.setFocusPolicy(Qt.FocusPolicy.TabFocus)      # Tab reaches it; a click leaves no ring
+
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton and self.property("menu"):
             self.clicked.emit()
+
+    def keyPressEvent(self, event):
+        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_Space) and self.property("menu"):
+            self.clicked.emit()
+        else:
+            super().keyPressEvent(event)
 
 
 def segmented(actions):

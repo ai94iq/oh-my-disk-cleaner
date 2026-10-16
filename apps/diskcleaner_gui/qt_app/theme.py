@@ -81,6 +81,9 @@ QTableWidget::item, QListWidget::item {{ padding: 4px 8px; border: 0; border-rad
 QTableWidget::item {{ border-radius: 0; }}
 QListWidget::indicator:unchecked {{ width: 13px; height: 13px; border: 1px solid {ink3}; border-radius: 3px;
     background: {raised}; }}
+QListWidget::indicator:checked {{ width: 13px; height: 13px; border: 1px solid {accent}; border-radius: 3px;
+    background: {accent}; image: url({check}); }}
+QFrame#pill:focus {{ border-color: {accent}; }}
 QTableWidget::item:hover, QListWidget::item:hover {{ background: {hover}; }}
 QTableWidget::item:selected, QListWidget::item:selected {{ background: {accent_soft}; color: {ink}; }}
 QTreeView {{ show-decoration-selected: 1; }}
@@ -156,7 +159,7 @@ def apply_theme(app, mode="system"):
                       (QPalette.ColorRole.ToolTipBase, "raised"), (QPalette.ColorRole.ToolTipText, "ink")):
         p.setColor(role, QColor(t[key]))
     app.setPalette(p)
-    app.setStyleSheet(QSS.format(**t, **chevrons(t["ink2"])))
+    app.setStyleSheet(QSS.format(**t, **chevrons(t["ink2"]), **chevrons(t["accent_ink"], ("check",))))
     return t
 
 

@@ -63,12 +63,12 @@ def icon(name, color, on_color=None):
     return QIcon(SvgIconEngine(name, color, on_color))
 
 
-def chevrons(color):
-    """Paths of chevron PNGs (plus @2x) in a temp folder: stylesheets take image files, not icons."""
+def chevrons(color, names=("chevron-right", "chevron-down")):
+    """Paths of icon PNGs (plus @2x) in a temp folder: stylesheets take image files, not icons."""
     folder = os.path.join(tempfile.gettempdir(), "diskcleaner_qt-icons")
     os.makedirs(folder, exist_ok=True)
     paths = {}
-    for name in ("chevron-right", "chevron-down"):
+    for name in names:
         base = os.path.join(folder, "%s-%s" % (name, QColor(color).name()[1:]))
         for suffix, side in (("", 16), ("@2x", 32)):
             image = QImage(side, side, QImage.Format.Format_ARGB32)

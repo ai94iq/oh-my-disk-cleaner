@@ -349,6 +349,7 @@ class MainWindow(QMainWindow):
         self.pill.chevron.setPixmap(icon("chevron-down", self.t["ink2"]).pixmap(QSize(14, 14), ratio))
         self.pill.setCursor(Qt.CursorShape.PointingHandCursor)
         self.pill.setToolTip(f"{self.target}\nTarget of Analyze and Duplicates; click to switch")
+        self.pill.setAccessibleName(f"Target: {self._label(self.target)}")
         self.pill.style().unpolish(self.pill)
         self.pill.style().polish(self.pill)
 
@@ -503,15 +504,33 @@ class MainWindow(QMainWindow):
             page=1,
         )
 
-    def confirm(self, text):
-        answer = QMessageBox.question(
-            self,
-            "Delete files",
-            text,
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No,
-        )
-        return answer == QMessageBox.StandardButton.Yes
+    def confirm_box(self, text, details):
+        """The one irreversible step: buttons say what they do, and keeping files is the default."""
+        box = QMessageBox(QMessageBox.Icon.Warning, "Delete files", text, parent=self)
+        box.setTextFormat(Qt.TextFormat.PlainText)
+        box.setInformativeText(details)
+        box.delete_button = box.addButton("Delete files", QMessageBox.ButtonRole.DestructiveRole)
+        keep = box.addButton("Keep files", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(keep)
+        box.setEscapeButton(keep)
+        return box
+
+    def confirm(self, text, details):
+        box = self.confirm_box(text, details)
+        box.exec()
+        return box.clickedButton() is box.delete_button
+
+    def _details(self, report):
+        """One line per category: what goes, and what cannot be got back."""
+        size, names, lines = self.service.format_size, self.service.CATEGORIES, []
+        for category in dict.fromkeys(row.category for row in report.rows):
+            rows = [row for row in report.rows if row.category == category]
+            line = f"{names[category]}: {plural(sum(r.items for r in rows), 'item')}, "
+            line += size(sum(r.size for r in rows))
+            if category == "recycle":
+                line += " (emptied for good)"
+            lines.append(line)
+        return "\n".join(lines)
 
     def run_clean(self):
         if not self.clean_action.isEnabled():
@@ -522,7 +541,7 @@ class MainWindow(QMainWindow):
             f"Delete {plural(report.total_items, 'item')} ({self.service.format_size(report.total_size)}) "
             f"from {plural(places, 'location')}? This cannot be undone."
         )
-        if not self.confirm(text):
+        if not self.confirm(text, self._details(report)):
             return None
         self.previewed = None
 

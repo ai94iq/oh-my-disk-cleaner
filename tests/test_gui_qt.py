@@ -178,6 +178,27 @@ class TemplateInvariants(QtCase):
         self.assertEqual(self.window.theme_button.accessibleName(), "Theme")
         self.assertTrue(self.window.theme_action.toolTip())
 
+    def test_checked_boxes_are_drawn_from_the_theme_in_both_themes(self):
+        # Styling only the unchecked box left Fusion's solid black square for checked ones
+        for mode in ("light", "dark"):
+            self.window.set_theme(mode)
+            sheet = self.app.styleSheet()
+            rule = sheet.split("QListWidget::indicator:checked", 1)[1].split("}", 1)[0]
+            self.assertIn(self.window.t["accent"], rule)
+            image = rule.split("url(", 1)[1].split(")", 1)[0]
+            self.assertTrue(os.path.isfile(image), image)
+
+    def test_the_target_pill_works_from_the_keyboard(self):
+        pill = self.window.pill
+        self.assertEqual(pill.focusPolicy(), Qt.FocusPolicy.TabFocus)
+        self.assertEqual(pill.accessibleName(), "Target: C:\  400 B free")
+        opened = []
+        pill.clicked.disconnect()  # the real menu's exec() would block the test
+        pill.clicked.connect(lambda: opened.append(1))
+        for key in (Qt.Key.Key_Return, Qt.Key.Key_Space):
+            QTest.keyClick(pill, key)
+        self.assertEqual(opened, [1, 1])
+
     def test_labels_never_render_rich_text(self):
         from diskcleaner_gui.qt_app.widgets import plain_label
 
@@ -298,22 +319,54 @@ class Cleanup(QtCase):
     def test_clean_asks_first_and_does_nothing_on_no(self):
         self.preview()
         asked = []
-        self.window.confirm = lambda text: asked.append(text) or False
+        self.window.confirm = lambda text, details: asked.append((text, details)) or False
         jobs = len(self.worker.jobs)
         self.window.clean_action.trigger()
-        self.assertEqual(asked, ["Delete 3 items (300 B) from 1 location? This cannot be undone."])
+        self.assertEqual(
+            asked,
+            [
+                (
+                    "Delete 3 items (300 B) from 1 location? This cannot be undone.",
+                    "Temporary files: 3 items, 300 B",
+                )
+            ],
+        )
         self.assertEqual(len(self.worker.jobs), jobs)
         self.assertNotIn(False, [call[2] for call in self.service.calls if call[0] == "clean"])
 
     def test_clean_on_yes_deletes_and_reports(self):
         self.preview()
-        self.window.confirm = lambda text: True
+        self.window.confirm = lambda text, details: True
         self.window.clean_action.trigger()
         self.finish()
         self.assertEqual(self.service.calls[-1], ("clean", tuple(sorted(self.ticked())), False))
         self.assertEqual(self.window.status.text(), "Freed 300 B from 3 items; 0 errors")
         self.assertEqual(self.window.status.property("tone"), "ok")
         self.assertFalse(self.window.clean_action.isEnabled())  # a new preview comes first
+
+
+    def test_the_confirm_names_the_deletion_and_defaults_to_keeping_files(self):
+        box = self.window.confirm_box("Delete 3 items?", "Temporary files: 3 items, 300 B")
+        self.assertEqual(box.defaultButton().text(), "Keep files")
+        self.assertIs(box.escapeButton(), box.defaultButton())
+        texts = [button.text() for button in box.buttons()]
+        self.assertIn("Delete files", texts)
+        self.assertNotIn("Yes", texts)
+        self.assertEqual(box.informativeText(), "Temporary files: 3 items, 300 B")
+
+    def test_the_confirm_warns_that_the_recycle_bin_is_emptied_for_good(self):
+        self.service.calls.clear()
+        self.window.previewed = (
+            {"recycle"},
+            real.CleanReport(True, [real.CleanRow("recycle", "C:\$Recycle.Bin", 2, 50, [])]),
+        )
+        self.window.set_ticked("temp", False)
+        self.window.set_ticked("cache", False)
+        self.window.set_ticked("logs", False)
+        asked = []
+        self.window.confirm = lambda text, details: asked.append(details) or False
+        self.window.clean_action.trigger()
+        self.assertIn("Recycle bin: 2 items, 50 B (emptied for good)", asked[0])
 
 
 class WorkerTest(unittest.TestCase):
@@ -356,7 +409,8 @@ class SelfCheckTest(unittest.TestCase):
 
         report = os.path.join(tempfile.mkdtemp(), "report.txt")
         self.assertEqual(main(["--self-check", report]), 0)
-        text = open(report, encoding="utf-8").read()
+        with open(report, encoding="utf-8") as handle:
+            text = handle.read()
         self.assertIn("theme dark: ok", text)
         self.assertIn("service: ok", text)
         self.assertNotIn("error", text)
