@@ -17,7 +17,7 @@ import sys
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Callable, Dict, List, Optional
 
 # Use smart bootstrap module import
 try:
@@ -121,7 +121,11 @@ class ProgressiveDiskAnalyzer:
         return result
 
     def progressive_scan(
-        self, max_files: int = None, max_seconds: int = None, show_progress: bool = True
+        self,
+        max_files: int = None,
+        max_seconds: int = None,
+        show_progress: bool = True,
+        should_stop: Optional[Callable[[int], bool]] = None,
     ) -> Dict:
         """
         Progressive scan - display results in real-time
@@ -130,6 +134,8 @@ class ProgressiveDiskAnalyzer:
             max_files: Maximum file count limit
             max_seconds: Maximum time limit (seconds)
             show_progress: Whether to show progress
+            should_stop: Called with the file count at the start and every 1000 files;
+                returning True stops the scan with stop_reason "cancelled"
 
         Returns:
             Scan result dictionary
@@ -156,6 +162,7 @@ class ProgressiveDiskAnalyzer:
         root_prefix = os.path.join(str(self.target_path), "")  # ends with one separator
         file_count = 0
         interrupted = False
+        cancelled = bool(should_stop and should_stop(0))
         scanner = DirectoryScanner(
             str(self.target_path),
             max_files=max_files,
@@ -168,8 +175,11 @@ class ProgressiveDiskAnalyzer:
             last_display_time = 0
             display_interval = 2.0  # Display progress every 2 seconds
 
-            for file_info in scanner.scan_generator():
+            for file_info in [] if cancelled else scanner.scan_generator():
                 file_count += 1
+                if should_stop and file_count % 1000 == 0 and should_stop(file_count):
+                    cancelled = True
+                    break
                 elapsed = time.time() - self.start_time
 
                 # Progressive progress display
@@ -219,12 +229,16 @@ class ProgressiveDiskAnalyzer:
         results["files"].sort(key=lambda x: x["size_bytes"], reverse=True)
         results["files"] = results["files"][:50]
 
-        stopped_early = interrupted or scanner.stopped_early
+        stopped_early = interrupted or cancelled or scanner.stopped_early
         results["scan_info"] = {
             "files_scanned": file_count,
             "scan_time_seconds": round(elapsed, 1),
             "stopped_early": stopped_early,
-            "stop_reason": "interrupted" if interrupted else (scanner.stop_reason or ""),
+            "stop_reason": (
+                "interrupted"
+                if interrupted
+                else "cancelled" if cancelled else (scanner.stop_reason or "")
+            ),
         }
         return results
 

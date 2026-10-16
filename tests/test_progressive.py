@@ -135,3 +135,14 @@ def test_include_windows_reaches_the_scanner(tmp_path, monkeypatch):
     analyzer.progressive_scan(max_files=10, max_seconds=1, show_progress=False)
 
     assert seen["include_windows"] is True
+
+
+def test_progressive_scan_should_stop(tmp_path):
+    (tmp_path / "a").mkdir()
+    (tmp_path / "a" / "f.bin").write_bytes(b"x")
+    analyzer = load_script().ProgressiveDiskAnalyzer(str(tmp_path))
+    results = analyzer.progressive_scan(
+        max_files=10**6, max_seconds=30, show_progress=False, should_stop=lambda count: True
+    )
+    assert results["scan_info"]["stop_reason"] == "cancelled"
+    assert results["scan_info"]["stopped_early"] is True

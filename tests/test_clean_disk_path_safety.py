@@ -558,3 +558,11 @@ def test_cli_requires_opt_in_and_exact_confirmation(tmp_path):
     assert confirmed.returncode == 0
     assert json.loads(confirmed.stdout)["summary"]["total_space_freed_mb"] == 2.0
     assert sorted(path.name for path in project.iterdir()) == ["keep.sh"]
+
+
+def test_clean_directory_reports_bytes(cleaner, tmp_path):
+    junk = tmp_path / "temp"
+    junk.mkdir()
+    (junk / "f.tmp").write_bytes(b"x" * 1234)
+    result = cleaner.clean_directory(str(junk), show_progress=False)
+    assert result["space_freed_bytes"] == 1234

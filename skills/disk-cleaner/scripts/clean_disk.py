@@ -382,7 +382,13 @@ class DiskCleaner:
         Returns:
             Dictionary with cleaning results
         """
-        result = {"path": path, "files_deleted": 0, "space_freed_mb": 0, "errors": []}
+        result = {
+            "path": path,
+            "files_deleted": 0,
+            "space_freed_mb": 0,
+            "space_freed_bytes": 0,
+            "errors": [],
+        }
 
         requested_path = Path(path).expanduser()
         if expected_identity is not None:
@@ -453,6 +459,7 @@ class DiskCleaner:
                     if self.dry_run:
                         result["files_deleted"] += 1
                         result["space_freed_mb"] += size / (1024 * 1024)
+                        result["space_freed_bytes"] += size
                     else:
                         if self._is_link(metadata):
                             self._remove_link(item, metadata)
@@ -463,6 +470,7 @@ class DiskCleaner:
 
                         result["files_deleted"] += 1
                         result["space_freed_mb"] += size / (1024 * 1024)
+                        result["space_freed_bytes"] += size
 
                     # Update progress (safely get item name)
                     if progress:

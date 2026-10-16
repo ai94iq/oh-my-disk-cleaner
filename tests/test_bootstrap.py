@@ -96,3 +96,10 @@ def test_import_resolves_inside_skill(tmp_path):
     ok, module_file = result.stdout.split()[:2]
     assert ok == "True"
     assert Path(module_file).resolve().is_relative_to(SKILL)
+
+
+def test_safe_print_without_console(monkeypatch):
+    # pythonw and windowed bundles have no console: sys.stdout is None
+    bootstrap = load_bootstrap()
+    monkeypatch.setattr(sys, "stdout", None)
+    bootstrap.safe_print("x")

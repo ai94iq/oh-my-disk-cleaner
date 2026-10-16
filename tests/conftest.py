@@ -10,6 +10,8 @@ import pytest
 # Tests import the package the skill ships, not an installed copy.
 SKILL_DIR = Path(__file__).resolve().parent.parent / "skills" / "disk-cleaner"
 sys.path.insert(0, str(SKILL_DIR))
+# The desktop apps (apps/diskcleaner_gui) import from the repo, not an install.
+sys.path.insert(0, str(SKILL_DIR.parent.parent / "apps"))
 
 
 def pytest_collection_modifyitems(config, items):

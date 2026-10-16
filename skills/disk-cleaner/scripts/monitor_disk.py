@@ -38,6 +38,51 @@ except Exception as e:
             pass  # Use system default
 
 
+def get_mount_points() -> List[str]:
+    """Get all mount points/drives"""
+    mount_points = []
+
+    if platform.system() == "Windows":
+        # Get all drive letters
+        import string
+
+        for letter in string.ascii_uppercase:
+            drive = f"{letter}:\\"
+            if os.path.exists(drive):
+                mount_points.append(drive)
+
+    elif platform.system() == "Darwin":  # macOS
+        # Common macOS mount points
+        mount_points = ["/"]
+        # Also check /Volumes for external drives
+        volumes = Path("/Volumes")
+        if volumes.exists():
+            for item in volumes.iterdir():
+                if item.is_dir() and not item.is_symlink():
+                    mount_points.append(str(item))
+
+    else:  # Linux
+        # Read from /proc/mounts or /etc/mtab
+        try:
+            with open("/proc/mounts", "r") as f:
+                for line in f:
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        mount_point = parts[1]
+                        # Filter out virtual filesystems
+                        if (
+                            not mount_point.startswith("/proc")
+                            and not mount_point.startswith("/sys")
+                            and not mount_point.startswith("/dev")
+                        ):
+                            mount_points.append(mount_point)
+        except (OSError, IOError):
+            # Fallback to common locations
+            mount_points = ["/", "/home"]
+
+    return mount_points
+
+
 class DiskMonitor:
     def __init__(self, warning_threshold: int = 80, critical_threshold: int = 90):
         self.warning_threshold = warning_threshold
@@ -56,47 +101,7 @@ class DiskMonitor:
 
     def get_mount_points(self) -> List[str]:
         """Get all mount points/drives"""
-        mount_points = []
-
-        if self.platform == "Windows":
-            # Get all drive letters
-            import string
-
-            for letter in string.ascii_uppercase:
-                drive = f"{letter}:\\"
-                if os.path.exists(drive):
-                    mount_points.append(drive)
-
-        elif self.platform == "Darwin":  # macOS
-            # Common macOS mount points
-            mount_points = ["/"]
-            # Also check /Volumes for external drives
-            volumes = Path("/Volumes")
-            if volumes.exists():
-                for item in volumes.iterdir():
-                    if item.is_dir() and not item.is_symlink():
-                        mount_points.append(str(item))
-
-        else:  # Linux
-            # Read from /proc/mounts or /etc/mtab
-            try:
-                with open("/proc/mounts", "r") as f:
-                    for line in f:
-                        parts = line.split()
-                        if len(parts) >= 2:
-                            mount_point = parts[1]
-                            # Filter out virtual filesystems
-                            if (
-                                not mount_point.startswith("/proc")
-                                and not mount_point.startswith("/sys")
-                                and not mount_point.startswith("/dev")
-                            ):
-                                mount_points.append(mount_point)
-            except (OSError, IOError):
-                # Fallback to common locations
-                mount_points = ["/", "/home"]
-
-        return mount_points
+        return get_mount_points()
 
     def get_disk_usage(self, path: str) -> Dict:
         """Get disk usage for a path"""

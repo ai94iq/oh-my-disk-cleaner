@@ -40,10 +40,13 @@ dev = [
     "mypy>=2.4.0",
     "pre-commit>=4.7.0",
 ]
+# Desktop apps: pip install -e ".[qt]" or -e ".[toga]" (editable, they need the skills/ tree)
+qt = ["PySide6-Essentials>=6.12.0"]
+toga = ["toga>=0.5.7"]
 
-# The skill folder holds the only copy of the package.
+# The skill folder holds the only copy of the package; apps/ holds the desktop apps.
 [tool.setuptools.packages.find]
-where = ["skills/disk-cleaner"]
+where = ["skills/disk-cleaner", "apps"]
 include = ["diskcleaner*"]
 
 [tool.black]

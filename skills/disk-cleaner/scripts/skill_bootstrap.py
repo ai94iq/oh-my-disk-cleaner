@@ -22,6 +22,8 @@ def safe_print(message: str, file=None):
     """Print, replacing characters the console cannot encode."""
     if file is None:
         file = sys.stdout
+    if file is None:  # pythonw and windowed bundles have no console
+        return
     try:
         print(message, file=file)
     except UnicodeEncodeError:
