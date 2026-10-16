@@ -4,6 +4,7 @@ Interactive user interface for cleanup operations.
 Provides menu-driven interaction for viewing and selecting files to clean.
 """
 
+import os
 import stat
 from datetime import datetime
 from pathlib import Path
@@ -576,9 +577,9 @@ class InteractiveCleanupUI:
 
         for file_path in files_to_delete:
             path = Path(file_path)
-            if path.exists():
+            if os.path.lexists(path):
                 try:
-                    total_size += path.stat().st_size
+                    total_size += path.lstat().st_size
                     valid_files.append(file_path)
                 except OSError:
                     pass
@@ -629,7 +630,7 @@ class InteractiveCleanupUI:
         print("\nFiles:")
         for i, file_path in enumerate(files[:20], 1):
             path = Path(file_path)
-            size = path.stat().st_size if path.exists() else 0
+            size = path.lstat().st_size if os.path.lexists(path) else 0
             print(f"{i:3}. {file_path} ({self._format_size(size)})")
 
         if len(files) > 20:

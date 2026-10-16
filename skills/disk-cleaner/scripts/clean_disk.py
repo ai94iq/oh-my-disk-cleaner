@@ -425,7 +425,7 @@ class DiskCleaner:
                 progress = None
 
             for item in items:
-                if not item.exists():
+                if not os.path.lexists(item):
                     continue
 
                 try:
@@ -435,7 +435,7 @@ class DiskCleaner:
 
                     # Age check
                     if older_than_days > 0:
-                        mtime = datetime.fromtimestamp(item.stat().st_mtime)
+                        mtime = datetime.fromtimestamp(item.lstat().st_mtime)
                         if mtime > cutoff_date:
                             continue
 

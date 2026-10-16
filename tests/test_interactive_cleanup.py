@@ -104,6 +104,19 @@ def test_refuses_link_inside_protected_folder(ui, tmp_path, monkeypatch):
     assert os.path.lexists(link)
 
 
+def test_broken_link_can_be_selected_and_removed(ui, tmp_path, monkeypatch):
+    link = tmp_path / "work" / "dangling"
+    try:
+        os.symlink(tmp_path / "gone.bin", link)
+    except (OSError, NotImplementedError) as error:
+        pytest.skip(f"Cannot create a symlink here: {error}")
+    monkeypatch.setattr("builtins.input", lambda prompt="": "YES")
+
+    assert ui.confirm_and_cleanup([str(link)], dry_run=False, backup=True) is True
+
+    assert not os.path.lexists(link)
+
+
 def test_confirmed_cleanup_runs(ui, tmp_path, monkeypatch):
     target = make_file(tmp_path, "old.log")
     monkeypatch.setattr("builtins.input", lambda prompt="": "YES")

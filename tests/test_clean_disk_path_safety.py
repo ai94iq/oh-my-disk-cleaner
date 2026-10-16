@@ -99,6 +99,42 @@ def test_user_config_adds_protected_paths(clean_disk, tmp_path, monkeypatch):
     assert cleaner._is_safe_to_delete(tmp_path / "cache" / "other.tmp") is True
 
 
+def make_symlink(link: Path, target: Path):
+    try:
+        os.symlink(target, link)
+    except (OSError, NotImplementedError) as error:
+        pytest.skip(f"Cannot create a symlink here: {error}")
+
+
+def test_broken_link_is_removed(clean_disk, tmp_path):
+    root = tmp_path / "cache"
+    root.mkdir()
+    link = root / "dangling"
+    make_symlink(link, tmp_path / "gone.bin")
+
+    result = clean_disk.DiskCleaner(dry_run=False, show_progress=False).clean_directory(str(root))
+
+    assert result["files_deleted"] == 1
+    assert not os.path.lexists(link)
+
+
+def test_link_age_is_the_links_own(clean_disk, tmp_path):
+    root = tmp_path / "cache"
+    root.mkdir()
+    old_target = tmp_path / "old.bin"
+    old_target.write_bytes(b"x")
+    os.utime(old_target, (0, 0))  # target from 1970, link created now
+    make_symlink(root / "fresh_link", old_target)
+
+    result = clean_disk.DiskCleaner(dry_run=False, show_progress=False).clean_directory(
+        str(root), older_than_days=30
+    )
+
+    assert result["files_deleted"] == 0
+    assert os.path.lexists(root / "fresh_link")
+    assert old_target.exists()
+
+
 def windows_cleaner(clean_disk, tmp_path, monkeypatch):
     for name in ("History", "WebCache"):
         (tmp_path / "Local" / "Microsoft" / "Windows" / name).mkdir(parents=True)
