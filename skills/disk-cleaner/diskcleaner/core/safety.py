@@ -84,6 +84,23 @@ def _builtin_protection() -> Tuple[Tuple[str, ...], frozenset, frozenset]:
     return tuple(map(_norm, paths)), identities, extensions
 
 
+@functools.lru_cache(maxsize=32)
+def _extra_protection(entries: Tuple[str, ...]) -> Tuple[Tuple[str, ...], frozenset]:
+    """A caller's protected paths (normalised text) and their identities. Callers pass
+    the same config list for every file, so it is resolved once per list, not per call."""
+    paths = _resolve_all(entries)
+    return tuple(map(_norm, paths)), frozenset(i for i in map(_identity, paths) if i)
+
+
+@functools.lru_cache(maxsize=4)
+def _home(spelled: str) -> Tuple[Optional[Path], Optional[Tuple[int, int]]]:
+    """The resolved home folder and its identity, keyed by how ~ expands right now."""
+    try:
+        return Path(spelled).resolve(), _identity(spelled)
+    except (OSError, RuntimeError, ValueError):
+        return None, None
+
+
 def matches_protected_pattern(filename: str, patterns: Optional[Iterable[str]] = None) -> bool:
     """
     Return whether a file name matches a protected pattern (*.db, config.* ...).
@@ -99,11 +116,8 @@ def is_root_or_home(path: Path) -> bool:
     """Return whether a resolved path is a filesystem root or the home folder."""
     if path.anchor and path == Path(path.anchor):
         return True
-    try:
-        home = Path(os.path.expanduser("~")).resolve()
-    except (OSError, RuntimeError, ValueError):
-        return True
-    return path == home
+    home, _ = _home(os.path.expanduser("~"))
+    return home is None or path == home
 
 
 def is_protected(
@@ -127,7 +141,7 @@ def is_protected(
     of the same folder, such as \\\\?\\C:\\Windows or \\\\localhost\\C$\\Windows).
     """
     builtin_paths, builtin_ids, builtin_exts = _builtin_protection()
-    extra_paths = _resolve_all(protected_paths or [])
+    extra_texts, extra_ids = _extra_protection(tuple(str(p) for p in _as_list(protected_paths)))
     extensions = builtin_exts | {ext.lower() for ext in _as_list(protected_extensions) if ext}
 
     try:
@@ -141,16 +155,15 @@ def is_protected(
         return True
 
     resolved_text = _norm(resolved)
-    for protected_text in (*builtin_paths, *map(_norm, extra_paths)):
+    for protected_text in (*builtin_paths, *extra_texts):
         if _within(resolved_text, protected_text):
             return True
 
     # Home is protected itself, not its contents; protected paths cover their subtree
     own_id = _identity(resolved)
-    if own_id and own_id == _identity(os.path.expanduser("~")):
+    if own_id and own_id == _home(os.path.expanduser("~"))[1]:
         return True
-    subtree_ids = set(builtin_ids)
-    subtree_ids.update(i for i in map(_identity, extra_paths) if i)
+    subtree_ids = builtin_ids | extra_ids
     if own_id in subtree_ids:
         return True
     return any(_parent_identity(str(parent)) in subtree_ids for parent in resolved.parents)
