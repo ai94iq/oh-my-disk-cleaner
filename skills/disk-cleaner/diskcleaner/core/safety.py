@@ -12,10 +12,61 @@ import subprocess
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple, Union
 
 from diskcleaner.config import Config
+from diskcleaner.config.defaults import get_protected_extensions, get_protected_paths
 from diskcleaner.core.scanner import FileInfo
+
+
+def is_root_or_home(path: Path) -> bool:
+    """Return whether a resolved path is a filesystem root or the home folder."""
+    if path.anchor and path == Path(path.anchor):
+        return True
+    try:
+        home = Path(os.path.expanduser("~")).resolve()
+    except (OSError, RuntimeError, ValueError):
+        return True
+    return path == home
+
+
+def is_protected(
+    path: Union[str, Path],
+    protected_paths: Optional[Iterable[Union[str, Path]]] = None,
+    protected_extensions: Optional[Iterable[str]] = None,
+) -> bool:
+    """
+    Return whether a path must never be deleted.
+
+    Protected: filesystem roots, the home folder, each protected path and
+    everything under it, and files with a protected extension. The path is
+    resolved first, so a link is judged by its target. Comparison is by path
+    component, so /usr-local is not inside /usr. Lists default to the
+    built-in config; a path that cannot be resolved counts as protected.
+    """
+    if protected_paths is None:
+        protected_paths = get_protected_paths()
+    if protected_extensions is None:
+        protected_extensions = get_protected_extensions()
+
+    try:
+        resolved = Path(path).expanduser().resolve()
+    except (OSError, RuntimeError, ValueError):
+        return True
+
+    if is_root_or_home(resolved):
+        return True
+    if resolved.suffix.lower() in {ext.lower() for ext in protected_extensions}:
+        return True
+
+    for protected in protected_paths:
+        try:
+            protected_path = Path(protected).expanduser().resolve()
+        except (OSError, RuntimeError, ValueError):
+            continue
+        if resolved == protected_path or protected_path in resolved.parents:
+            return True
+    return False
 
 
 class FileStatus(Enum):
@@ -95,12 +146,7 @@ class SafetyChecker:
         Returns:
             FileStatus indicating if file is safe to delete.
         """
-        # Check protected paths
-        if self._is_protected_path(file.path):
-            return FileStatus.PROTECTED
-
-        # Check protected extensions
-        if self._is_protected_extension(file.name):
+        if is_protected(file.path, self.protected_paths, self.protected_extensions):
             return FileStatus.PROTECTED
 
         # Check protected patterns
@@ -118,41 +164,6 @@ class SafetyChecker:
                 return FileStatus.NO_PERMISSION
 
         return FileStatus.SAFE
-
-    def _is_protected_path(self, path: str) -> bool:
-        """
-        Check if path is in protected list.
-
-        Args:
-            path: File path to check.
-
-        Returns:
-            True if path is protected.
-        """
-        # Normalize path
-        path = os.path.normpath(path)
-
-        for protected in self.protected_paths:
-            protected = os.path.normpath(protected)
-            if path.startswith(protected):
-                return True
-
-        return False
-
-    def _is_protected_extension(self, filename: str) -> bool:
-        """
-        Check if file has protected extension.
-
-        Args:
-            filename: File name to check.
-
-        Returns:
-            True if extension is protected.
-        """
-        # Get extension (lowercase)
-        ext = os.path.splitext(filename)[1].lower()
-
-        return ext in self.protected_extensions
 
     def _is_protected_pattern(self, filename: str) -> bool:
         """

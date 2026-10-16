@@ -5,7 +5,18 @@ This module provides default configuration values that can be overridden
  by user config files or command-line arguments.
 """
 
+import os
 from typing import Dict, List
+
+
+def _windows_system_paths() -> List[str]:
+    """Windows system folders, read from the environment so other drives work."""
+    return [
+        os.environ.get("SystemRoot", "C:\\Windows"),
+        os.environ.get("ProgramFiles", "C:\\Program Files"),
+        os.environ.get("ProgramFiles(x86)", "C:\\Program Files (x86)"),
+        os.environ.get("ProgramData", "C:\\ProgramData"),
+    ]
 
 
 def get_default_config() -> Dict:
@@ -18,19 +29,22 @@ def get_default_config() -> Dict:
     return {
         # Protected paths and files
         "protected": {
-            "paths": [
-                # Windows
-                "C:\\Windows",
-                "C:\\Program Files",
-                "C:\\Program Files (x86)",
-                "C:\\ProgramData",
+            "paths": _windows_system_paths()
+            + [
                 # Linux/macOS
                 "/usr",
                 "/bin",
                 "/sbin",
                 "/lib",
+                "/lib64",
+                "/etc",
+                "/boot",
+                "/sys",
+                "/proc",
+                "/dev",
                 "/System",
                 "/Library",
+                "/Applications",
             ],
             "patterns": [
                 "*.database",

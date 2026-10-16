@@ -14,7 +14,7 @@ import stat
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Tuple
 
 # Use smart bootstrap module to import diskcleaner
 try:
@@ -48,6 +48,11 @@ except Exception as e:
             f"[Warning] Cannot import diskcleaner module, some features unavailable: {e}",
             file=sys.stderr,
         )
+
+# Protection rules live in the package; without them nothing may be deleted,
+# so a failed import stops the script here.
+from diskcleaner.config.defaults import get_protected_extensions, get_protected_paths  # noqa: E402
+from diskcleaner.core.safety import is_protected, is_root_or_home  # noqa: E402
 
 
 JUNK_DIRECTORY_NAMES = {
@@ -95,124 +100,17 @@ class DiskCleaner:
         self.errors = []
         self.show_progress = show_progress and PROGRESS_AVAILABLE and sys.stdout.isatty()
 
-        # Safety: paths to never delete
-        self.protected_paths = self._get_protected_paths()
-
-        # Safety: file extensions to never delete
-        self.protected_extensions = {
-            ".exe",
-            ".dll",
-            ".sys",
-            ".drv",
-            ".bat",
-            ".cmd",
-            ".ps1",
-            ".sh",
-            ".bash",
-            ".zsh",
-            ".app",
-            ".dmg",
-            ".pkg",
-            ".deb",
-            ".rpm",
-            ".msi",
-            ".iso",
-            ".vhd",
-            ".vhdx",
-        }
-
-    def _get_protected_paths(self) -> Set[str]:
-        """Get paths that should never be deleted"""
-        protected = set()
-
-        if self.system == "windows":
-            protected.update(
-                [
-                    "C:\\Windows",
-                    "C:\\Program Files",
-                    "C:\\Program Files (x86)",
-                    "C:\\ProgramData",
-                ]
-            )
-            # Protect user profile root but NOT subdirectories (allows cleaning Temp, Cache, etc.)
-            # We use a trailing separator to indicate we're protecting the directory itself,
-            # not its contents
-            # if "USERPROFILE" in os.environ:
-            #     protected.add(os.environ["USERPROFILE"])
-
-        elif self.system == "darwin":
-            protected.update(
-                [
-                    "/System",
-                    "/Library",
-                    "/Applications",
-                    "/usr",
-                    "/bin",
-                    "/sbin",
-                ]
-            )
-            # Don't protect entire home directory to allow cleaning cache/logs
-            # protected.add(os.path.expanduser("~"))
-
-        else:  # Linux
-            protected.update(
-                [
-                    "/usr",
-                    "/bin",
-                    "/sbin",
-                    "/lib",
-                    "/lib64",
-                    "/etc",
-                    "/boot",
-                    "/sys",
-                    "/proc",
-                    "/dev",
-                ]
-            )
-            # Don't protect entire home directory to allow cleaning cache/logs
-            # protected.add(os.path.expanduser("~"))
-
-        return protected
+        # Safety: paths and extensions never deleted (shared defaults)
+        self.protected_paths = get_protected_paths()
+        self.protected_extensions = get_protected_extensions()
 
     def _is_safe_to_delete(self, path: Path) -> bool:
         """Check if a path is safe to delete"""
-        try:
-            resolved = path.expanduser().resolve()
-        except (OSError, RuntimeError, ValueError):
-            return False
-
-        if self._is_protected_root(resolved):
-            return False
-
-        # Path-aware comparison keeps sibling names such as /usr-local distinct.
-        for protected in self.protected_paths:
-            try:
-                protected_path = Path(protected).expanduser().resolve()
-            except (OSError, RuntimeError, ValueError):
-                continue
-            if resolved == protected_path or protected_path in resolved.parents:
-                return False
-
-        # Check file extension
-        if resolved.suffix.lower() in self.protected_extensions:
-            return False
-
-        return True
-
-    @staticmethod
-    def _is_filesystem_root(path: Path) -> bool:
-        """Return whether path is a POSIX, drive, or UNC filesystem root."""
-        return bool(path.anchor) and path == Path(path.anchor)
+        return not is_protected(path, self.protected_paths, self.protected_extensions)
 
     def _is_protected_root(self, path: Path) -> bool:
         """Protect filesystem roots and the current home/profile root."""
-        if self._is_filesystem_root(path):
-            return True
-        try:
-            home = Path(os.path.expanduser("~")).resolve()
-        except (OSError, RuntimeError, ValueError):
-            return True
-        return path == home
+        return is_root_or_home(path)
 
     @staticmethod
     def _is_reparse_point(metadata: os.stat_result) -> bool:
@@ -243,25 +141,6 @@ class DiskCleaner:
                     else:
                         total += metadata.st_size
         return total
-
-    def _rmtree_legacy_windows(self, path: Path) -> None:
-        """Remove a directory tree without following Windows reparse points."""
-        with os.scandir(str(path)) as entries:
-            for entry in entries:
-                entry_path = Path(entry.path)
-                metadata = entry.stat(follow_symlinks=False)
-                if stat.S_ISLNK(metadata.st_mode):
-                    entry_path.unlink()
-                elif self._is_reparse_point(metadata):
-                    if stat.S_ISDIR(metadata.st_mode):
-                        entry_path.rmdir()
-                    else:
-                        entry_path.unlink()
-                elif stat.S_ISDIR(metadata.st_mode):
-                    self._rmtree_legacy_windows(entry_path)
-                else:
-                    entry_path.unlink()
-        path.rmdir()
 
     def validate_custom_path(
         self,
@@ -555,10 +434,8 @@ class DiskCleaner:
                             else:
                                 item.unlink()
                         elif stat.S_ISDIR(metadata.st_mode):
-                            if self.system == "windows" and sys.version_info < (3, 8):
-                                self._rmtree_legacy_windows(item)
-                            else:
-                                shutil.rmtree(item)
+                            # Python 3.8+ removes Windows junctions without entering them
+                            shutil.rmtree(item)
                         else:
                             item.unlink()
 

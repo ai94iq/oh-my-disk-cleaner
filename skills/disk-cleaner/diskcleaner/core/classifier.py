@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from diskcleaner.config import Config
+from diskcleaner.core.safety import is_protected
 from diskcleaner.core.scanner import FileInfo
 
 
@@ -204,15 +205,8 @@ class FileClassifier:
         Returns:
             RiskLevel enum value.
         """
-        # Check if path is protected
-        for protected_path in self.protected_paths:
-            if file.path.startswith(protected_path):
-                return RiskLevel.PROTECTED
-
-        # Check if extension is protected
-        for ext in self.protected_extensions:
-            if file.name.lower().endswith(ext.lower()):
-                return RiskLevel.PROTECTED
+        if is_protected(file.path, self.protected_paths, self.protected_extensions):
+            return RiskLevel.PROTECTED
 
         # Check if pattern matches protected patterns
         for pattern in self.protected_patterns:

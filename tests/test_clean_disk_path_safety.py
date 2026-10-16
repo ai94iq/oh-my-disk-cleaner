@@ -217,14 +217,12 @@ def test_recursive_size_treats_a_windows_junction_as_a_leaf(clean_disk, tmp_path
     assert (target / "external.bin").exists()
 
 
-def test_legacy_windows_removes_regular_directory_trees(clean_disk, tmp_path, monkeypatch):
+def test_recursive_cleanup_removes_regular_directory_trees(clean_disk, tmp_path):
     root = tmp_path / "cache"
     payload = root / "candidate" / "nested" / "payload.bin"
     payload.parent.mkdir(parents=True)
     payload.write_bytes(b"delete")
     cleaner = clean_disk.DiskCleaner(dry_run=False, show_progress=False)
-    cleaner.system = "windows"
-    monkeypatch.setattr(clean_disk.sys, "version_info", (3, 7))
 
     result = cleaner.clean_directory(str(root))
 
@@ -234,9 +232,7 @@ def test_legacy_windows_removes_regular_directory_trees(clean_disk, tmp_path, mo
 
 
 @pytest.mark.skipif(os.name != "nt", reason="Windows junction semantics")
-def test_legacy_windows_recursive_cleanup_preserves_a_junction_target(
-    clean_disk, tmp_path, monkeypatch
-):
+def test_recursive_cleanup_preserves_a_junction_target(clean_disk, tmp_path):
     root = tmp_path / "cache"
     candidate = root / "candidate"
     candidate.mkdir(parents=True)
@@ -254,8 +250,6 @@ def test_legacy_windows_recursive_cleanup_preserves_a_junction_target(
     if created.returncode != 0:
         pytest.skip(f"Cannot create a test junction: {created.stderr.strip()}")
     cleaner = clean_disk.DiskCleaner(dry_run=False, show_progress=False)
-    cleaner.system = "windows"
-    monkeypatch.setattr(clean_disk.sys, "version_info", (3, 7))
 
     result = cleaner.clean_directory(str(root))
 
