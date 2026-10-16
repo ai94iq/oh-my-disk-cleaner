@@ -593,3 +593,32 @@ class Resize(QtCase):
         self.app.processEvents()
         self.window._say("a status line far longer than any window is wide " * 10)
         self.assertLessEqual(self.window.minimumSizeHint().width(), 640)
+
+
+class SharpIcons(QtCase):
+    def test_box_glyphs_land_on_whole_pixels_at_125_percent(self):
+        # Stop (square) and Clean (trash-2) smeared each 2 px line over 3 px at 20 px,
+        # the 16 px icon at 125%: 68% and 64% of their inked pixels were partial (measured)
+        from diskcleaner_gui.qt_app.icons import soft_share, svg_bytes
+
+        for name in ("stop", "clean"):
+            with self.subTest(name=name):
+                self.assertLessEqual(soft_share(svg_bytes(name, "#000", pixels=20), 20), 0.35)
+
+    def test_no_glyph_gets_softer_at_common_scales(self):
+        from diskcleaner_gui.qt_app.icons import ICON_NAMES, plain_svg, soft_share, svg_bytes
+
+        drawn = [*ICON_NAMES, "chevron-down", "chevron-right", "check", "sun", "moon", "monitor"]
+        for name in drawn:
+            for pixels in (16, 20, 24, 32):
+                with self.subTest(name=name, pixels=pixels):
+                    snapped = soft_share(svg_bytes(name, "#000", pixels=pixels), pixels)
+                    plain = soft_share(plain_svg(name, "#000", pixels=pixels), pixels)
+                    self.assertLessEqual(snapped, plain)
+
+    def test_the_icon_engine_draws_on_device_pixels(self):
+        # A logical origin like 10 px is 12.5 device px at 125%: snapping must start there
+        from diskcleaner_gui.qt_app.icons import device_origin
+
+        self.assertEqual(device_origin(10, 1.25), 10.4)
+        self.assertEqual(device_origin(8, 1.0), 8)
