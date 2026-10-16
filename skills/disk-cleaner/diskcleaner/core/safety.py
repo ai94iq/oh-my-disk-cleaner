@@ -40,10 +40,19 @@ def _identity(path: Union[str, Path]) -> Optional[Tuple[int, int]]:
 _parent_identity = functools.lru_cache(maxsize=8192)(_identity)
 
 
+def _as_list(entries) -> list:
+    """Config values may be one string ("paths: C:\\x") instead of a list; never split it."""
+    if entries is None:
+        return []
+    if isinstance(entries, (str, Path)):
+        return [entries]
+    return list(entries)
+
+
 def _resolve_all(paths: Iterable[Union[str, Path]]) -> List[Path]:
     """Resolve each non-blank entry; blank entries (a YAML "[]" parses to [""]) are dropped."""
     resolved = []
-    for entry in paths:
+    for entry in _as_list(paths):
         if not str(entry).strip():
             continue
         try:
@@ -82,7 +91,7 @@ def matches_protected_pattern(filename: str, patterns: Optional[Iterable[str]] =
     Like the path lists, given patterns add to the built-in ones and never
     replace them; blank entries are ignored.
     """
-    all_patterns = [*get_protected_patterns(), *(p for p in patterns or [] if str(p).strip())]
+    all_patterns = [*get_protected_patterns(), *(p for p in _as_list(patterns) if str(p).strip())]
     return any(fnmatch.fnmatch(filename, pattern) for pattern in all_patterns)
 
 
@@ -119,7 +128,7 @@ def is_protected(
     """
     builtin_paths, builtin_ids, builtin_exts = _builtin_protection()
     extra_paths = _resolve_all(protected_paths or [])
-    extensions = builtin_exts | {ext.lower() for ext in protected_extensions or [] if ext}
+    extensions = builtin_exts | {ext.lower() for ext in _as_list(protected_extensions) if ext}
 
     try:
         resolved = Path(path).expanduser().resolve()
