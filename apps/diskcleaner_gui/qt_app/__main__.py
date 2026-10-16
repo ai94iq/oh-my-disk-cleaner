@@ -19,27 +19,14 @@ def parse(argv):
     return parser.parse_args(argv)
 
 
-def sample_tree(folder):
-    """A small folder with large files and two copies, for checks and screenshots."""
-    for name, size in (("videos", 24), ("photos", 12), ("notes", 1)):
-        os.makedirs(os.path.join(folder, name), exist_ok=True)
-        with open(os.path.join(folder, name, f"{name}.bin"), "wb") as out:
-            out.write(b"x" * size * 1024 * 1024)
-    for copy in ("a", "b"):
-        with open(os.path.join(folder, "notes", f"copy-{copy}.txt"), "w", encoding="utf-8") as out:
-            out.write("same text")
-    return folder
-
-
 def self_check(report):
     """What a packaged bundle must prove without a display: Qt, SVG icons, the window in both
     themes, and the bundled scripts answering a real scan and a dry-run preview."""
-    import tempfile
-
     from PySide6.QtCore import QSettings
 
+    from ..selfcheck import check_service
     from . import __version__
-    from .window import MainWindow, load_service
+    from .window import MainWindow
 
     lines, ok = [f"version: {__version__}"], True
     try:
@@ -50,14 +37,7 @@ def self_check(report):
             lines.append(f"theme {mode}: ok")
         sizes = sorted(s.width() for s in window.windowIcon().availableSizes())
         lines.append(f"icon sizes: {sizes}")
-        service = load_service()
-        with tempfile.TemporaryDirectory() as folder:
-            found = service.analyze(sample_tree(folder))
-            groups = service.duplicates(folder)
-        preview = service.clean([], dry_run=True)
-        if not (found.folders and groups and preview.dry_run):
-            raise RuntimeError("the service returned nothing for the sample folder")
-        lines.append("service: ok")
+        lines.append(check_service())
     except Exception as err:  # the report says why; the exit code says that it failed
         lines.append(f"error: {type(err).__name__}: {err}")
         ok = False
@@ -96,6 +76,8 @@ def screenshots(folder):
     ini = os.path.join(folder, "screens.ini")
     window = MainWindow(settings=QSettings(ini, QSettings.Format.IniFormat), service=Sample())
     window.show()
+    from ..selfcheck import sample_tree
+
     with tempfile.TemporaryDirectory() as sample:
         window.switch_target(sample_tree(sample))
         window.analyze()  # the worker thread is not started, so each job runs at once

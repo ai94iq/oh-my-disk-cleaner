@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from ..text import plural
 from .icons import ICON_SIZE, app_icon, dot_pixmap, icon
 from .theme import THEME_ICONS, THEME_MODES, apply_theme
 from .widgets import (
@@ -55,10 +56,6 @@ CHOOSE = "Choose folder..."
 THEME_TIPS = {mode: f"Theme: {mode.title()} (click to change)" for mode in THEME_MODES}
 HINTS = {"browser_history": "Browser history (signs you out of sites)"}
 PAGE_OF = {"analysis": 0, "preview": 1, "clean": 1, "dups": 2}  # whose status line a job writes
-
-
-def plural(count, word):
-    return f"{count:,} {word}{'' if count == 1 else 's'}"
 
 
 def load_service():
