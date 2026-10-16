@@ -24,12 +24,10 @@ try:
     if str(script_dir) not in sys.path:
         sys.path.insert(0, str(script_dir))
 
-    from skill_bootstrap import init_console, safe_print, setup_skill_environment
+    from skill_bootstrap import import_diskcleaner_modules, safe_print
 
-    # Initialize console encoding
-    init_console()
-    _, bootstrap = setup_skill_environment(require_modules=False)
-    IMPORT_SUCCESS, MODULES = bootstrap.import_diskcleaner_modules()
+    # Also fixes stdout encoding via setup_skill_environment
+    IMPORT_SUCCESS, MODULES = import_diskcleaner_modules()
 
     if IMPORT_SUCCESS:
         DirectoryScanner = MODULES.get("DirectoryScanner")
@@ -39,7 +37,8 @@ try:
         Config = None
 
 except Exception as e:
-    safe_print(f"Warning: Import failed - {e}")
+    print(f"Warning: Import failed - {e}", file=sys.stderr)
+    safe_print = print
     DirectoryScanner = None
     Config = None
 
@@ -56,7 +55,7 @@ class ProgressiveDiskAnalyzer:
 
     def _get_default_path(self) -> str:
         """Get default scan path"""
-        if sys.platform == "Windows":
+        if sys.platform == "win32":
             return "C:\\"
         else:
             return "/"
