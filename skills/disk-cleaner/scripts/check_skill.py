@@ -57,17 +57,10 @@ def check_python_version():
     version = sys.version_info
     version_str = f"{version.major}.{version.minor}.{version.micro}"
 
-    # Python 3.7+ is recommended
-    is_good = version >= (3, 7)
-    is_excellent = version >= (3, 8)
-
-    if is_excellent:
-        print_check("Python Version", True, f"v{version_str} (recommended)")
-    elif is_good:
-        print_check("Python Version", True, f"v{version_str} (usable, recommend upgrading to 3.8+)")
-    else:
-        print_check("Python Version", False, f"v{version_str} (requires 3.7+)")
-
+    # 3.11 is the oldest CPython still receiving security fixes (3.10 ended 2026-10)
+    is_good = version >= (3, 11)
+    detail = f"v{version_str}" if is_good else f"v{version_str} (requires 3.11+)"
+    print_check("Python Version", is_good, detail)
     return is_good
 
 

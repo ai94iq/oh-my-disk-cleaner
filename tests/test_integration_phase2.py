@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 from unittest.mock import patch
 
-from diskcleaner.core import CleanupReport, InteractiveCleanupUI, ProcessManager, SmartCleanupEngine
+from diskcleaner.core import CleanupReport, InteractiveCleanupUI, SmartCleanupEngine
 from diskcleaner.core.scanner import FileInfo
 
 
@@ -249,43 +249,6 @@ def test_incremental_scanning():
         print("Incremental scanning: PASS")
 
 
-def test_process_manager_with_locked_files():
-    """Test process manager with file locking scenarios."""
-    manager = ProcessManager()
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_path = Path(temp_dir)
-
-        # Create test file
-        test_file = temp_path / "test.txt"
-        test_file.write_text("test content")
-
-        # Check for locking processes
-        processes = manager.get_locking_processes(str(test_file))
-
-        # Should return empty list (file not locked)
-        assert isinstance(processes, list)
-
-        # Test check_and_handle_locked_files
-        import time
-
-        file_info = FileInfo(
-            path=str(test_file),
-            name="test.txt",
-            size=12,
-            mtime=time.time(),
-            is_dir=False,
-            is_link=False,
-        )
-
-        unlocked, locked = manager.check_and_handle_locked_files([file_info])
-
-        # File should be unlocked
-        assert len(unlocked) >= 0
-        assert len(locked) >= 0
-
-        print("Process manager with locked files: PASS")
-
 
 def test_reclaimable_space_calculation():
     """Test accurate reclaimable space calculation."""
@@ -378,7 +341,6 @@ if __name__ == "__main__":
     test_interactive_ui_integration()
     test_cleanup_confirmation_workflow()
     test_incremental_scanning()
-    test_process_manager_with_locked_files()
     test_reclaimable_space_calculation()
     test_error_handling()
     test_performance_with_many_files()

@@ -2,7 +2,7 @@
 Performance optimization module for disk-cleaner.
 
 This module provides intelligent, layered performance optimizations:
-- Concurrent scanning and deletion
+- Concurrent scanning
 - Incremental caching
 - Adaptive hash computation
 - Performance monitoring
@@ -11,15 +11,6 @@ All optimizations are pluggable and can be disabled via configuration.
 """
 
 from diskcleaner.optimization.concurrency import ConcurrencyManager
-from diskcleaner.optimization.delete import (
-    AsyncDeleter,
-    BatchDeleter,
-    DeleteResult,
-    DeleteStrategy,
-    DeletionManager,
-    ProgressUpdate,
-    SmartDeleter,
-)
 from diskcleaner.optimization.hash import (
     AdaptiveHasher,
     DuplicateFinder,
@@ -57,14 +48,6 @@ __all__ = [
     "ScanResult",
     "ScanSnapshot",
     "FileInfo",
-    # Deletion
-    "BatchDeleter",
-    "AsyncDeleter",
-    "SmartDeleter",
-    "DeletionManager",
-    "DeleteStrategy",
-    "DeleteResult",
-    "ProgressUpdate",
     # Hash
     "AdaptiveHasher",
     "ParallelHasher",

@@ -1,8 +1,9 @@
 """
 Safety checker for file deletion operations.
 
-Provides comprehensive safety checks including file lock detection,
-permission verification, and process termination capabilities.
+Provides safety checks before deletion: protected paths and extensions,
+file lock detection and permission verification. Locked files are reported
+and skipped; this module never terminates processes.
 """
 
 import os
@@ -87,7 +88,6 @@ class SafetyChecker:
     - Protected path and extension checking
     - File lock detection (cross-platform)
     - Permission verification
-    - Process termination (optional)
     - Backup creation (optional)
     """
 
@@ -255,170 +255,6 @@ class SafetyChecker:
             True if we have write permission.
         """
         return os.access(path, os.W_OK)
-
-    def get_locking_process(self, path: str) -> Optional[Dict[str, Any]]:
-        """
-        Get information about process locking the file.
-
-        Args:
-            path: File path to check.
-
-        Returns:
-            Dictionary with process info, or None if not locked.
-        """
-        if self.platform == "Windows":
-            return self._get_locking_process_windows(path)
-        elif self.platform in ["Linux", "Darwin"]:
-            return self._get_locking_process_unix(path)
-
-        return None
-
-    def _get_locking_process_windows(self, path: str) -> Optional[Dict[str, Any]]:
-        """
-        Get process info on Windows.
-
-        Uses handle.exe from Sysinternals if available,
-        otherwise returns limited info.
-
-        Args:
-            path: File path to check.
-
-        Returns:
-            Dictionary with process info, or None.
-        """
-        try:
-            # Try using handle.exe (if installed)
-            result = subprocess.run(
-                ["handle", path],
-                capture_output=True,
-                timeout=10,
-                text=True,
-            )
-
-            if result.returncode == 0:
-                # Parse output to extract PID and process name
-                # Output format: python.exe        pid: 12345   type: File
-                for line in result.stdout.split("\n"):
-                    if path.lower() in line.lower():
-                        parts = line.split()
-                        if len(parts) >= 4:
-                            return {
-                                "name": parts[0],
-                                "pid": int(parts[2].rstrip(",")),
-                                "type": parts[4],
-                            }
-        except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
-            pass
-
-        # Fallback: return generic info
-        return {
-            "name": "unknown",
-            "pid": -1,
-            "type": "File",
-        }
-
-    def _get_locking_process_unix(self, path: str) -> Optional[Dict[str, Any]]:
-        """
-        Get process info on Unix/Linux/macOS.
-
-        Args:
-            path: File path to check.
-
-        Returns:
-            Dictionary with process info, or None.
-        """
-        try:
-            # Get PID using lsof
-            result = subprocess.run(
-                ["lsof", "-t", path],
-                capture_output=True,
-                timeout=5,
-                text=True,
-            )
-
-            if result.returncode == 0:
-                pid = int(result.stdout.strip())
-
-                # Get process name using ps
-                cmd_result = subprocess.run(
-                    ["ps", "-p", str(pid), "-o", "comm="],
-                    capture_output=True,
-                    timeout=5,
-                    text=True,
-                )
-
-                if cmd_result.returncode == 0:
-                    return {
-                        "name": cmd_result.stdout.strip(),
-                        "pid": pid,
-                    }
-        except (subprocess.TimeoutExpired, FileNotFoundError, ValueError):
-            pass
-
-        return None
-
-    def terminate_process(self, pid: int) -> bool:
-        """
-        Terminate a process by PID.
-
-        Args:
-            pid: Process ID to terminate.
-
-        Returns:
-            True if successful, False otherwise.
-        """
-        try:
-            if self.platform == "Windows":
-                subprocess.run(
-                    ["taskkill", "/F", "/PID", str(pid)],
-                    check=True,
-                    timeout=10,
-                    capture_output=True,
-                )
-            else:
-                subprocess.run(
-                    ["kill", "-9", str(pid)],
-                    check=True,
-                    timeout=10,
-                    capture_output=True,
-                )
-            return True
-        except (subprocess.CalledProcessError, subprocess.TimeoutExpired):
-            return False
-
-    def show_process_details(self, process: Dict[str, Any]) -> str:
-        """
-        Get detailed information about a process.
-
-        Args:
-            process: Process info dictionary.
-
-        Returns:
-            Formatted string with process details.
-        """
-        details = f"Process: {process['name']} (PID: {process['pid']})\n"
-
-        try:
-            if self.platform == "Windows":
-                result = subprocess.run(
-                    ["tasklist", "/FI", f"PID eq {process['pid']}", "/FO", "CSV"],
-                    capture_output=True,
-                    timeout=5,
-                    text=True,
-                )
-                details += f"\n{result.stdout}"
-            else:
-                result = subprocess.run(
-                    ["ps", "-p", str(process["pid"]), "-o", "etime,%cpu,rss,cmd"],
-                    capture_output=True,
-                    timeout=5,
-                    text=True,
-                )
-                details += f"\n{result.stdout}"
-        except (subprocess.TimeoutExpired, FileNotFoundError):
-            pass
-
-        return details
 
     def create_backup(self, file_path: str) -> Optional[str]:
         """

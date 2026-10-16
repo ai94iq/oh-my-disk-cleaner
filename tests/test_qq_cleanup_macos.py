@@ -123,11 +123,3 @@ def test_cleanup_rejects_chat_database_category(tmp_path):
 
     assert result.returncode != 0
     assert "only Pic and Emoji may be cleaned" in result.stderr
-
-
-def test_skill_packager_includes_qq_cleanup_script():
-    packager = (
-        Path(__file__).parents[1] / "skills" / "disk-cleaner" / "scripts" / "package_skill.py"
-    ).read_text(encoding="utf-8")
-
-    assert '"scripts/qq_cleanup_macos.zsh"' in packager

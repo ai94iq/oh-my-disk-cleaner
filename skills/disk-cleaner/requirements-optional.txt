@@ -1,0 +1,6 @@
+# Optional speedups. The skill runs on the standard library alone; each of
+# these is imported only if present. Floors are the latest releases
+# (checked 2026-10-16) so known vulnerabilities in older builds are excluded.
+psutil>=7.2.2   # memory monitoring during large scans
+xxhash>=4.0.1   # faster duplicate hashing
+blake3>=1.0.11  # faster duplicate hashing
