@@ -134,7 +134,7 @@ def analyze(
     path: str,
     *,
     max_files: int = 20_000_000,
-    max_seconds: int = 120,
+    max_seconds: int = 600,
     cancel: Optional[threading.Event] = None,
     progress: Optional[Callable[[int], None]] = None,
 ) -> Analysis:

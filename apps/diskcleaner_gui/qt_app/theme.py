@@ -93,6 +93,14 @@ QToolBar#shell QToolButton:checked, QFrame#bar QToolButton:checked {{ background
 QToolBar#shell QToolButton:disabled, QFrame#bar QToolButton:disabled {{ color: {ink3}; }}
 QToolBar#shell QToolButton:focus, QFrame#bar QToolButton:focus {{ border-color: {accent}; }}
 QFrame#bar QToolButton {{ padding: 4px 6px; font-size: 12px; }}
+QFrame#bar QToolButton#primary {{ background: {accent}; color: {accent_ink}; font-weight: 600;
+    padding: 4px 10px; }}
+QFrame#bar QToolButton#primary:hover {{ background: {select}; }}
+QFrame#bar QToolButton#primary:disabled {{ background: {accent_soft}; color: {accent_text}; }}
+QFrame#bar QToolButton#danger:enabled {{ background: {bad_soft}; color: {bad_text}; font-weight: 600;
+    padding: 4px 10px; }}
+QLabel#warn_chip {{ background: {warn_soft}; color: {warn}; font-size: 11px; font-weight: 600;
+    border-radius: 9px; padding: 2px 8px; }}
 QToolBar#shell QToolButton::menu-indicator {{ image: none; width: 0px; }}
 QFrame#seg {{ background: {raised}; border: 1px solid {line}; border-radius: 11px; }}
 QToolBar#shell QFrame#seg QToolButton {{ border-radius: 8px; padding: 5px 14px; }}

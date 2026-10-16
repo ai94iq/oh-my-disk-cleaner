@@ -412,3 +412,57 @@ class SelfCheckTest(unittest.TestCase):
         self.assertIn("theme dark: ok", text)
         self.assertIn("service: ok", text)
         self.assertNotIn("error", text)
+
+
+class Hierarchy(QtCase):
+    def test_each_page_has_one_primary_action_and_clean_reads_as_danger(self):
+        buttons = self.window.buttons
+        names = {action.text(): buttons[action].objectName() for action in buttons}
+        self.assertEqual(names["Analyze"], "primary")
+        self.assertEqual(names["Preview"], "primary")
+        self.assertEqual(names["Find"], "primary")
+        self.assertEqual(names["Clean"], "danger")
+        self.assertEqual(names["Stop"], "")
+
+    def test_the_preview_total_is_a_warning_not_a_reward(self):
+        self.assertEqual(self.window.total.objectName(), "warn_chip")
+
+    def test_danger_and_primary_text_has_contrast_in_both_themes(self):
+        from diskcleaner_gui.qt_app.theme import THEMES, contrast
+
+        for name, t in THEMES.items():
+            with self.subTest(theme=name):
+                self.assertGreaterEqual(contrast(t["bad_text"], t["bad_soft"]), 4.5)
+                self.assertGreaterEqual(contrast(t["accent_ink"], t["accent"]), 4.5)
+
+
+class StalePreview(QtCase):
+    def setUp(self):
+        super().setUp()
+        self.window.clean_page.trigger()
+        self.window.preview_action.trigger()
+        self.finish()
+
+    def test_changing_the_ticks_says_the_preview_is_out_of_date(self):
+        self.window.set_ticked("logs", False)
+        self.assertEqual(self.window.preview.stack.currentIndex(), 0)  # the empty state
+        self.assertEqual(self.window.preview_empty.title.text(), "Preview is out of date")
+        self.assertEqual(
+            self.window.status.text(), "Selection changed; preview again before cleaning"
+        )
+        self.assertFalse(self.window.total.isVisibleTo(self.window))
+
+    def test_ticking_back_brings_the_preview_back(self):
+        self.window.set_ticked("logs", False)
+        self.window.set_ticked("logs", True)
+        self.assertEqual(self.window.preview.stack.currentIndex(), 1)
+        self.assertTrue(self.window.clean_action.isEnabled())
+
+    def test_after_a_clean_the_deleted_rows_are_gone(self):
+        self.window.confirm = lambda text, details: True
+        self.window.clean_action.trigger()
+        self.finish()
+        self.assertEqual(self.window.preview.rowCount(), 0)
+        self.assertEqual(self.window.preview.stack.currentIndex(), 0)
+        self.assertEqual(self.window.preview_empty.title.text(), "Cleaned")
+        self.assertEqual(self.window.total.isVisibleTo(self.window), False)

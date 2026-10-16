@@ -93,3 +93,25 @@ def test_a_whole_drive_is_not_cut_short_by_the_file_cap():
     import inspect
 
     assert inspect.signature(service.analyze).parameters["max_files"].default >= 20_000_000
+
+
+def test_a_slow_disk_gets_ten_minutes_before_the_time_cap():
+    import inspect
+
+    assert inspect.signature(service.analyze).parameters["max_seconds"].default >= 600
+
+
+def test_scan_and_stop_lines_read_as_sentences():
+    from diskcleaner_gui.text import scan_line
+
+    assert scan_line(8, 0.04, "") == "8 files in under a second"
+    assert scan_line(1_959_658, 16.4, "") == "1,959,658 files in 16.4 s"
+    assert scan_line(1, 2.0, "cancelled") == (
+        "Stopped: 1 file scanned; the lists show what was found"
+    )
+    assert scan_line(5, 600.0, "time_limit (600s)") == (
+        "Stopped at the 600 s limit: 5 files scanned; the lists show what was found"
+    )
+    assert scan_line(20, 3.0, "file_limit (20000000 files)") == (
+        "Stopped at the 20,000,000 file limit: 20 files scanned; the lists show what was found"
+    )

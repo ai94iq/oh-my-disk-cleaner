@@ -34,7 +34,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ..text import plural
+from ..text import plural, scan_line
 from .icons import ICON_SIZE, app_icon, dot_pixmap, icon
 from .theme import THEME_ICONS, THEME_MODES, apply_theme
 from .widgets import (
@@ -74,6 +74,7 @@ class MainWindow(QMainWindow):
         self.theme_mode = mode if mode in THEME_MODES else "system"
         self.t = apply_theme(QApplication.instance(), self.theme_mode)
         self._icons, self.cards, self.bars, self.empties = [], [], [], []
+        self.buttons = {}  # action -> its button in a floating bar
         self.jobs, self.busy, self.previewed, self.notes = {}, None, None, {}
         self.cancel, self.scanned = threading.Event(), 0
         self.targets = self._targets()
@@ -88,6 +89,14 @@ class MainWindow(QMainWindow):
             self._clean_page(),
             self._dup_page(),
         )
+        for action, role in (
+            (self.analyze_action, "primary"),
+            (self.preview_action, "primary"),
+            (self.find_action, "primary"),
+            (self.clean_action, "danger"),
+        ):
+            self.buttons[action].setObjectName(role)
+        self.preview_empty = self.preview.stack.widget(0)
         self.pages = QStackedWidget()
         for page in (self.analyze_view, self.clean_view, self.dup_view):
             self.pages.addWidget(page)
@@ -209,7 +218,8 @@ class MainWindow(QMainWindow):
         row.setContentsMargins(8, 6, 8, 6)
         row.setSpacing(4)
         for action in actions:
-            row.addWidget(tool_button(action))
+            self.buttons[action] = tool_button(action)
+            row.addWidget(self.buttons[action])
         holder = floating(box, self.t)
         self.bars.append(holder)
         return holder
@@ -222,8 +232,8 @@ class MainWindow(QMainWindow):
         column.addWidget(bar, 0, Qt.AlignmentFlag.AlignHCenter)
         return page
 
-    def _action(self, text, name, tip, slot):
-        action = self._iconed(QAction(text, self), name)
+    def _action(self, text, name, tip, slot, key="ink"):
+        action = self._iconed(QAction(text, self), name, key)
         action.setToolTip(tip)
         action.triggered.connect(slot)
         return action
@@ -240,6 +250,7 @@ class MainWindow(QMainWindow):
             "analyze",
             "Analyze\nScans the target; Stop keeps what it found",
             self.analyze,
+            "accent_ink",
         )
         self.stop_action = self._action("Stop", "stop", "Stop\nEnds the scan early", self.stop)
         split = self._split(
@@ -257,26 +268,28 @@ class MainWindow(QMainWindow):
             ticked = key in self.service.DEFAULT_CATEGORIES
             item.setCheckState(Qt.CheckState.Checked if ticked else Qt.CheckState.Unchecked)
             self.categories.addItem(item)
-        self.categories.itemChanged.connect(lambda _item: self._update_actions())
+        self.categories.itemChanged.connect(lambda _item: self._ticks_changed())
         preview, self.preview = self._table(
             ["Category", "Items", "Size", "Location"],
             "preview",
             "Nothing previewed",
             "Preview shows what Clean would remove. Nothing is deleted yet.",
         )
-        self.total = plain_label("", "chip")
+        self.total = plain_label("", "warn_chip")
         self.total.hide()
         self.preview_action = self._action(
             "Preview",
             "preview",
             "Preview\nCounts what Clean would remove; deletes nothing",
             self.run_preview,
+            "accent_ink",
         )
         self.clean_action = self._action(
             "Clean",
             "clean",
             "Clean\nDeletes what the preview listed, after you confirm",
             self.run_clean,
+            "bad_text",
         )
         split = self._split(
             self._pane("What to clean", self.categories), self._pane("Preview", preview, self.total)
@@ -294,7 +307,11 @@ class MainWindow(QMainWindow):
         self.copies = QListWidget()
         self.copies.setIconSize(ICON_SIZE)
         self.find_action = self._action(
-            "Find", "find", "Find\nLooks for duplicate files under the target", self.find
+            "Find",
+            "find",
+            "Find\nLooks for duplicate files under the target",
+            self.find,
+            "accent_ink",
         )
         split = self._split(
             self._pane("Duplicate groups", groups), self._pane("Copies", self.copies)
@@ -476,12 +493,7 @@ class MainWindow(QMainWindow):
         size = self.service.format_size
         self._fill(self.folders, [(e.name, size(e.size), e.path) for e in result.folders])
         self._fill(self.files, [(e.name, size(e.size), e.path) for e in result.files])
-        if result.stop_reason:
-            self._say(
-                f"Stopped: {result.stop_reason}; {plural(result.files_scanned, 'file')}", page=0
-            )
-        else:
-            self._say(f"{plural(result.files_scanned, 'file')} in {result.seconds} s", page=0)
+        self._say(scan_line(result.files_scanned, result.seconds, result.stop_reason), page=0)
 
     # clean
     def ticked(self):
@@ -515,13 +527,33 @@ class MainWindow(QMainWindow):
         self.previewed = (chosen, report)
         size, names = self.service.format_size, self.service.CATEGORIES
         rows = [(names[r.category], f"{r.items:,}", size(r.size), r.path) for r in report.rows]
+        self.preview_empty.show_text(
+            "Nothing to clean", "The ticked places hold nothing Clean would remove."
+        )
         self._fill(self.preview, rows)
         self.total.setText(f"{size(report.total_size)} in {report.total_items:,} items")
         self.total.setVisible(bool(rows))
-        self._say(
-            f"Clean would remove {plural(report.total_items, 'item')} ({size(report.total_size)})",
-            page=1,
+        self.preview_note = (
+            f"Clean would remove {plural(report.total_items, 'item')} ({size(report.total_size)})"
         )
+        self._say(self.preview_note, page=1)
+
+    def _ticks_changed(self):
+        """A preview shows only while the ticks match it; Clean follows the same rule."""
+        self._update_actions()
+        if self.previewed is None or self.busy:
+            return
+        current = self.previewed[0] == self.ticked()
+        has_rows = current and self.preview.rowCount() > 0
+        self.preview.stack.setCurrentIndex(1 if has_rows else 0)
+        self.total.setVisible(has_rows)
+        if current:
+            self._say(self.preview_note, page=1)
+        else:
+            self.preview_empty.show_text(
+                "Preview is out of date", "Preview again to see what Clean would remove."
+            )
+            self._say("Selection changed; preview again before cleaning", page=1)
 
     def confirm_box(self, text, details):
         """The one irreversible step: buttons say what they do, and keeping files is the default."""
@@ -557,7 +589,8 @@ class MainWindow(QMainWindow):
         chosen, report = self.previewed
         places = len(report.rows)
         text = (
-            f"Delete {plural(report.total_items, 'item')} ({self.service.format_size(report.total_size)}) "
+            f"Delete {plural(report.total_items, 'item')} "
+            f"({self.service.format_size(report.total_size)}) "
             f"from {plural(places, 'location')}? This cannot be undone."
         )
         if not self.confirm(text, self._details(report)):
@@ -571,6 +604,10 @@ class MainWindow(QMainWindow):
 
     def _show_clean(self, report):
         errors = report.error_count
+        self.preview.setRowCount(0)  # those rows are gone now
+        self.preview.stack.setCurrentIndex(0)
+        self.preview_empty.show_text("Cleaned", "Preview again to see what is left.")
+        self.total.hide()
         self._say(
             f"Freed {self.service.format_size(report.total_size)} from "
             f"{plural(report.total_items, 'item')}; {plural(errors, 'error')}",

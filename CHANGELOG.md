@@ -15,7 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - A PySide6 desktop app in `apps/diskcleaner_gui/`, over a toolkit-free
-  `service.py` that calls the scripts: Analyze, Clean
+  `service.py` that calls the scripts (each page has one filled primary
+  action, Clean reads as a danger, and a preview that no longer matches the
+  ticks says so): Analyze, Clean
   (preview, then delete after a confirm) and Duplicates (report only).
 - PyInstaller bundles (`packaging/qt/`); `gui.yml` builds and self-checks
   them and attaches them to the release of a `gui-vX.Y.Z` tag.
