@@ -297,7 +297,9 @@ Examples:
     parser.add_argument(
         "--max-files", type=int, default=50000, help="Maximum file count limit (default: 50000)"
     )
-    parser.add_argument("--max-seconds", type=int, default=30, help="Maximum time limit-seconds (default: 30)")
+    parser.add_argument(
+        "--max-seconds", type=int, default=30, help="Maximum time limit-seconds (default: 30)"
+    )
     parser.add_argument("--json", action="store_true", help="JSON output")
     parser.add_argument("--no-progress", action="store_true", help="Disable progress")
     parser.add_argument(

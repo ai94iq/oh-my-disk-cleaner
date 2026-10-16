@@ -13,7 +13,9 @@ SCRIPTS = SKILL / "scripts"
 
 
 def load_bootstrap():
-    spec = importlib.util.spec_from_file_location("skill_bootstrap_under_test", SCRIPTS / "skill_bootstrap.py")
+    spec = importlib.util.spec_from_file_location(
+        "skill_bootstrap_under_test", SCRIPTS / "skill_bootstrap.py"
+    )
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -51,7 +53,9 @@ SCRIPT_NAMES = sorted(
 @pytest.mark.parametrize("script", SCRIPT_NAMES)
 def test_scripts_ignore_planted_modules_when_imported(script, tmp_path):
     fake = plant_fake_skill(tmp_path / "fake")
-    (fake / "skill_bootstrap.py").write_text("raise SystemExit('PLANTED BOOTSTRAP')\n", encoding="utf-8")
+    (fake / "skill_bootstrap.py").write_text(
+        "raise SystemExit('PLANTED BOOTSTRAP')\n", encoding="utf-8"
+    )
     code = (
         "import sys; sys.path.append(sys.argv[1]);"
         "import diskcleaner;"  # a foreign copy already loaded, as a host program might

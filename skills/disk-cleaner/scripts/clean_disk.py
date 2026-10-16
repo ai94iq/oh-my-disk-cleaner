@@ -43,7 +43,6 @@ except Exception as e:
 from diskcleaner.config import Config  # noqa: E402
 from diskcleaner.core.safety import is_protected, is_root_or_home  # noqa: E402
 
-
 JUNK_DIRECTORY_NAMES = {
     "$recycle.bin",
     "cache",

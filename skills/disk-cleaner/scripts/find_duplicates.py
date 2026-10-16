@@ -51,7 +51,7 @@ def format_size(bytes_size: int) -> str:
     Returns:
         Formatted string (e.g., "1.5 GB", "500 MB")
     """
-    for unit in ['B', 'KB', 'MB', 'GB', 'TB']:
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
         if bytes_size < 1024.0:
             return f"{bytes_size:.2f} {unit}"
         bytes_size /= 1024.0
@@ -295,6 +295,7 @@ def main():
     # Fix Windows console encoding
     if sys.platform == "win32":
         import codecs
+
         sys.stdout = codecs.getwriter("utf-8")(sys.stdout.buffer, "strict")
         sys.stderr = codecs.getwriter("utf-8")(sys.stderr.buffer, "strict")
 
@@ -344,9 +345,7 @@ Examples:
     parser.add_argument(
         "--json", action="store_true", help="Output as JSON instead of human-readable"
     )
-    parser.add_argument(
-        "--output", "-o", help="Save report to file (JSON format)"
-    )
+    parser.add_argument("--output", "-o", help="Save report to file (JSON format)")
     parser.add_argument(
         "--file-limit",
         type=int,

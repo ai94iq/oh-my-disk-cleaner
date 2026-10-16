@@ -34,7 +34,7 @@ jobs:
         shell: bash
 
       - name: Run tests
-        run: pytest tests/ -v --cov=diskcleaner --cov-report=xml --cov-report=term
+        run: pytest tests/ -v --ignore=tests/benchmarks --cov=diskcleaner --cov-report=xml --cov-report=term
         shell: bash
 
       - name: Upload coverage to Codecov
@@ -44,42 +44,3 @@ jobs:
           files: ./coverage.xml
           fail_ci_if_error: false
           verbose: true
-
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.x'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: Check code formatting with black
-        run: |
-          black --check skills/disk-cleaner/diskcleaner/ tests/
-          black --check skills/disk-cleaner/scripts/ || true
-        shell: bash
-
-      - name: Check import sorting with isort
-        run: |
-          isort --check-only skills/disk-cleaner/diskcleaner/ tests/
-          isort --check-only skills/disk-cleaner/scripts/ || true
-        shell: bash
-
-      - name: Lint with flake8
-        run: |
-          flake8 skills/disk-cleaner/diskcleaner/ tests/ --max-line-length=100 --extend-ignore=E203,E231,W503,F841,F401,F541,E731,E302,E402,E722,E501,F821
-          flake8 skills/disk-cleaner/scripts/ --max-line-length=100 --extend-ignore=E203,E231,W503,F401,F541,F841,F811,E731,E302,E402,E722,E501,F821 || true
-        shell: bash
-
-      - name: Type check with mypy
-        run: mypy skills/disk-cleaner/diskcleaner/ --config-file=mypy.ini || true

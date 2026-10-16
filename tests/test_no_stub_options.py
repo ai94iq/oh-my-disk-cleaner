@@ -9,7 +9,10 @@ SCRIPTS = Path(__file__).resolve().parent.parent / "skills" / "disk-cleaner" / "
 
 def help_text(script: str) -> str:
     result = subprocess.run(
-        [sys.executable, str(SCRIPTS / script), "--help"], capture_output=True, text=True, timeout=60
+        [sys.executable, str(SCRIPTS / script), "--help"],
+        capture_output=True,
+        text=True,
+        timeout=60,
     )
     assert result.returncode == 0, result.stderr
     return result.stdout

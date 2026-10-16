@@ -239,11 +239,7 @@ class LargeScalePerformanceTest:
             throughput = result.total_count / scan_time if scan_time > 0 else 0
             target_met = self._check_target(result.total_count, scan_time)
 
-            check = (
-                "[OK]"
-                if target_met
-                else "[WARN]"
-            )
+            check = "[OK]" if target_met else "[WARN]"
 
             # Print result
             self.terminal.print(
@@ -334,11 +330,7 @@ class LargeScalePerformanceTest:
 
         # Target status
         all_passed = targets_passed == len(successful) and len(failed) == 0
-        status = (
-            "[PASS]"
-            if all_passed
-            else "[WARN]"
-        )
+        status = "[PASS]" if all_passed else "[WARN]"
         self.terminal.print(f"\n{status} Targets: {targets_passed}/{len(successful)} passed")
 
         # Recommendation

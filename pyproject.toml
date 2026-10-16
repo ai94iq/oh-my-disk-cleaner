@@ -68,6 +68,8 @@ exclude = '''
 
 [tool.isort]
 profile = "black"
+# The package lives under skills/disk-cleaner, not at the repo root
+known_first_party = ["diskcleaner"]
 line_length = 100
 multi_line_output = 3
 include_trailing_comma = true

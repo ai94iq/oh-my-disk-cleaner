@@ -37,7 +37,6 @@ repos:
     rev: 7eccf20b526fe4f2230bf9afeeef2fc9f97faf8d  # frozen: 7.4.1
     hooks:
       - id: flake8
-        args: ['--max-line-length=100', '--extend-ignore=E203,E231,W503']
         exclude: '^examples/'
 
   # Type checking - temporarily disabled due to extensive type annotation work needed

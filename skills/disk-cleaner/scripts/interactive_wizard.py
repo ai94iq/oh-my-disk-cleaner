@@ -30,9 +30,9 @@ setup_skill_environment(require_modules=False)
 
 from diskcleaner.config import Config
 from diskcleaner.core.interactive import InteractiveCleanupUI
-from diskcleaner.core.progress import ProgressBar, IndeterminateProgress
+from diskcleaner.core.progress import IndeterminateProgress, ProgressBar
 from diskcleaner.core.scanner import DirectoryScanner
-from diskcleaner.core.smart_cleanup import SmartCleanupEngine, CleanupReport
+from diskcleaner.core.smart_cleanup import CleanupReport, SmartCleanupEngine
 
 
 class InteractiveWizard:
@@ -99,6 +99,7 @@ class InteractiveWizard:
         except Exception as e:
             print(f"\nError: {e}")
             import traceback
+
             traceback.print_exc()
             return False
 
@@ -249,7 +250,9 @@ class InteractiveWizard:
         else:  # custom
             # Ask user for custom parameters
             max_files = self._ask_custom_param("Maximum files (default: no limit): ", None)
-            max_seconds = self._ask_custom_param("Maximum scan time in seconds (default: no limit): ", None)
+            max_seconds = self._ask_custom_param(
+                "Maximum scan time in seconds (default: no limit): ", None
+            )
 
             scanner = DirectoryScanner(
                 str(self.target_path),
@@ -315,10 +318,7 @@ class InteractiveWizard:
     def _show_scan_summary(self, report: CleanupReport, scanner: DirectoryScanner):
         """Display scan summary."""
         total_files = sum(len(files) for files in report.by_type.values())
-        total_size = sum(
-            sum(f.size for f in files)
-            for files in report.by_type.values()
-        )
+        total_size = sum(sum(f.size for f in files) for files in report.by_type.values())
 
         print("\n" + "=" * 60)
         print("   Scan complete")
@@ -387,9 +387,7 @@ class InteractiveWizard:
         # Count by type
         print("\nBy type (top 5):")
         type_items = sorted(
-            report.by_type.items(),
-            key=lambda x: sum(f.size for f in x[1]),
-            reverse=True
+            report.by_type.items(), key=lambda x: sum(f.size for f in x[1]), reverse=True
         )[:5]
         for category, files in type_items:
             size = sum(f.size for f in files)
@@ -398,16 +396,18 @@ class InteractiveWizard:
         # Duplicates
         if report.duplicates:
             dup_space = sum(d.reclaimable_space for d in report.duplicates)
-            print(f"\nDuplicates: {len(report.duplicates)} groups, reclaimable {self._format_size(dup_space)}")
+            print(
+                f"\nDuplicates: {len(report.duplicates)} groups, reclaimable {self._format_size(dup_space)}"
+            )
 
         print("=" * 60)
 
     def _get_risk_emoji(self, risk: str) -> str:
         """Get emoji for risk level (for agent reports only)."""
         emojis = {
-            "safe": "OK",       # Green
+            "safe": "OK",  # Green
             "confirm_needed": "!",  # Yellow
-            "protected": "X",   # Red
+            "protected": "X",  # Red
         }
         return emojis.get(risk, "?")
 
@@ -545,14 +545,9 @@ def main():
     """Main entry point."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Interactive wizard for disk cleanup"
-    )
+    parser = argparse.ArgumentParser(description="Interactive wizard for disk cleanup")
     parser.add_argument(
-        "path",
-        nargs="?",
-        default=".",
-        help="Path to analyze (default: current directory)"
+        "path", nargs="?", default=".", help="Path to analyze (default: current directory)"
     )
 
     args = parser.parse_args()

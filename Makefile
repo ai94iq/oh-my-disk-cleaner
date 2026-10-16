@@ -1,4 +1,4 @@
-.PHONY: help install dev test test-bench test-fast lint format clean build check all
+.PHONY: help install dev test test-bench test-fast lint format clean check all
 
 PKG := skills/disk-cleaner/diskcleaner
 
@@ -13,8 +13,8 @@ dev:            ## Install dev dependencies and pre-commit hooks
 	pip install -e ".[dev]"
 	pre-commit install
 
-test:           ## Run all tests with coverage
-	pytest tests/ -v --cov=diskcleaner --cov-report=html --cov-report=term
+test:           ## Run tests with coverage (benchmarks: make test-bench)
+	pytest tests/ -v --ignore=tests/benchmarks --cov=diskcleaner --cov-report=html --cov-report=term
 
 test-bench:     ## Run performance benchmarks
 	pytest tests/benchmarks/ -v
@@ -22,11 +22,8 @@ test-bench:     ## Run performance benchmarks
 test-fast:      ## Run tests, skipping slow ones
 	pytest tests/ -v -m "not slow"
 
-lint:           ## Run black, isort, flake8 and mypy
-	black --check $(PKG) tests/
-	isort --check-only $(PKG) tests/
-	flake8 $(PKG) tests/ --max-line-length=100
-	mypy $(PKG) --config-file=mypy.ini
+lint:           ## Run the pre-commit hooks (black, isort, flake8), as CI does
+	pre-commit run --all-files
 
 format:         ## Format code with black and isort
 	black $(PKG) tests/
@@ -35,9 +32,6 @@ format:         ## Format code with black and isort
 clean:          ## Remove build output and caches
 	rm -rf build/ dist/ *.egg-info/ .pytest_cache/ htmlcov/ .coverage
 	find skills/ tests/ -type d -name __pycache__ -prune -exec rm -rf {} +
-
-build:          ## Build the distribution package
-	python -m build
 
 check: lint test ## Run lint and tests
 

@@ -249,7 +249,6 @@ def test_incremental_scanning():
         print("Incremental scanning: PASS")
 
 
-
 def test_reclaimable_space_calculation():
     """Test accurate reclaimable space calculation."""
     with tempfile.TemporaryDirectory() as temp_dir:

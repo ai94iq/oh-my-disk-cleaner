@@ -91,8 +91,8 @@ def test_scan_mode_parameters():
     """Test scan mode parameter setup."""
     print("\nTesting scan mode parameters...")
 
-    from diskcleaner.core.scanner import DirectoryScanner
     from diskcleaner.config import Config
+    from diskcleaner.core.scanner import DirectoryScanner
 
     config = Config.load()
 
@@ -112,7 +112,9 @@ def test_scan_mode_parameters():
     scanner_deep = DirectoryScanner(".", config=config, max_files=None, max_seconds=None)
     # Note: DirectoryScanner sets defaults if None is passed
     # Check if it allows very high limits instead of None
-    print(f"[OK] Deep scan: max_files={scanner_deep.max_files}, max_seconds={scanner_deep.max_seconds}")
+    print(
+        f"[OK] Deep scan: max_files={scanner_deep.max_files}, max_seconds={scanner_deep.max_seconds}"
+    )
 
     # Progressive scan
     scanner_prog = DirectoryScanner(".", config=config, cache_enabled=True)
@@ -144,6 +146,7 @@ def main():
     except Exception as e:
         print(f"\n[ERROR] {e}")
         import traceback
+
         traceback.print_exc()
         return 1
 

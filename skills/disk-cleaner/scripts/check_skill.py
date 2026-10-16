@@ -101,7 +101,11 @@ def check_imports():
 
     # Setup environment
     success = bootstrap.setup_import_path()
-    print_check("  Environment Setup", success, "Module path configured" if success else "Path configuration failed")
+    print_check(
+        "  Environment Setup",
+        success,
+        "Module path configured" if success else "Path configuration failed",
+    )
 
     if not success:
         return False
