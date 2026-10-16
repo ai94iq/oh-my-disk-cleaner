@@ -282,13 +282,13 @@ class SafetyChecker:
         Returns:
             True if file is locked.
         """
+        # Renaming a file onto itself needs delete access, which Windows refuses
+        # while another handle has it open without FILE_SHARE_DELETE (the usual
+        # case). O_EXCL without O_CREAT detects nothing.
         try:
-            # Try to open file with exclusive access
-            # This will fail if another process has it open
-            fd = os.open(path, os.O_EXCL | os.O_RDWR)
-            os.close(fd)
+            os.rename(path, path)
             return False
-        except (OSError, IOError):
+        except OSError:
             return True
 
     def _is_locked_unix(self, path: str) -> bool:

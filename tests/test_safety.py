@@ -126,6 +126,18 @@ def test_scalar_config_value_is_one_entry(tmp_path):
     assert matches_protected_pattern("x.txt", "*.special") is False
 
 
+@pytest.mark.skipif(os.name != "nt", reason="Windows sharing rules")
+def test_windows_lock_check_sees_an_open_file(tmp_path):
+    target = tmp_path / "in_use.log"
+    target.write_text("x", encoding="utf-8")
+    checker = SafetyChecker()
+
+    assert checker._is_locked(str(target)) is False
+    with open(target, "r+", encoding="utf-8"):
+        assert checker._is_locked(str(target)) is True
+    assert checker._is_locked(str(target)) is False
+
+
 def test_windows_defaults_follow_environment(monkeypatch):
     monkeypatch.setenv("SystemRoot", r"X:\Win")
     assert r"X:\Win" in get_protected_paths()
