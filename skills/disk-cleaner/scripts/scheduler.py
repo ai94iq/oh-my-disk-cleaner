@@ -8,7 +8,6 @@ Cross-platform scheduler using platform-specific mechanisms.
 
 import json
 import os
-import platform
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -20,7 +19,6 @@ class CleanupScheduler:
 
     def __init__(self, config_path: str = None):
         self.config_path = config_path or self._get_default_config_path()
-        self.platform = platform.system()
         self.tasks = self._load_tasks()
 
     def _get_default_config_path(self) -> str:
@@ -146,31 +144,6 @@ class CleanupScheduler:
             except Exception as e:
                 print(f"Error running task '{task['name']}': {e}")
 
-    def install_system_scheduler(self):
-        """Install as system scheduler (cron/task scheduler)."""
-        if self.platform == "Linux":
-            self._install_cron()
-        elif self.platform == "Darwin":
-            self._install_launchd()
-        elif self.platform == "Windows":
-            self._install_task_scheduler()
-        else:
-            print(f"Platform {self.platform} not supported for system scheduling")
-
-    def _install_cron(self):
-        """Install as cron job on Linux."""
-        print("Cron installation not yet implemented.")
-        print("Manual cron entry example:")
-        print("0 2 * * * /usr/bin/python3 -m diskcleaner.scheduler --run-tasks")
-
-    def _install_launchd(self):
-        """Install as launchd service on macOS."""
-        print("Launchd installation not yet implemented.")
-
-    def _install_task_scheduler(self):
-        """Install as Windows Task Scheduler task."""
-        print("Task Scheduler installation not yet implemented.")
-
 
 def print_tasks(tasks: List[Dict]):
     """Print scheduled tasks in a formatted table."""
@@ -236,9 +209,6 @@ def main():
         "--force", action="store_true", help="Actually delete files (disables dry-run)"
     )
 
-    # Install system scheduler
-    subparsers.add_parser("install", help="Install as system scheduler")
-
     args = parser.parse_args()
 
     if not args.command:
@@ -266,9 +236,6 @@ def main():
     elif args.command == "run":
         dry_run = not args.force
         scheduler.run_due_tasks(dry_run=dry_run)
-
-    elif args.command == "install":
-        scheduler.install_system_scheduler()
 
     return 0
 

@@ -285,7 +285,6 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Diagnose Disk Cleaner skill package")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed information")
-    parser.add_argument("--fix", action="store_true", help="Try to automatically fix issues")
 
     args = parser.parse_args()
 
