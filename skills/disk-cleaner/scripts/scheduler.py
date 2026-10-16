@@ -183,7 +183,7 @@ def print_tasks(tasks: List[Dict]):
     print(f"{'='*80}\n")
 
     for i, task in enumerate(tasks, 1):
-        status = "✅ Enabled" if task.get("enabled", True) else "❌ Disabled"
+        status = "[OK] Enabled" if task.get("enabled", True) else "[X] Disabled"
         print(f"{i}. {task['name']} [{status}]")
         print(f"   Path: {task['path']}")
         print(f"   Schedule: {task['schedule']}")

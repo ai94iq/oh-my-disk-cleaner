@@ -46,25 +46,25 @@ class InteractiveCleanupUI:
         """
         while True:
             print("\n" + "=" * 60)
-            print("清理报告查看选项")
+            print("Cleanup report views")
             print("=" * 60)
-            print("1. 按类型查看")
-            print("2. 按风险等级查看")
-            print("3. 按时间查看")
-            print("4. 查看重复文件")
-            print("5. 详细列表")
-            print("6. 查看统计摘要")
-            print("0. 返回")
+            print("1. By type")
+            print("2. By risk level")
+            print("3. By age")
+            print("4. Duplicate files")
+            print("5. Detailed list")
+            print("6. Summary statistics")
+            print("0. Back")
             print("=" * 60)
 
-            choice = input("请选择 (0-6): ").strip()
+            choice = input("Choose (0-6): ").strip()
 
             if choice == "0":
                 return None
             elif choice in ("1", "2", "3", "4", "5", "6"):
                 return choice
             else:
-                print("无效选择，请重试")
+                print("Invalid choice, try again")
 
     def view_by_type(self, report: CleanupReport) -> List[str]:
         """
@@ -85,7 +85,7 @@ class InteractiveCleanupUI:
 
         while True:
             print("\n" + "=" * 60)
-            print("按类型分类")
+            print("By type")
             print("=" * 60)
 
             for idx, (category, files) in enumerate(categories, 1):
@@ -93,19 +93,19 @@ class InteractiveCleanupUI:
                     total_size = sum(f.size for f in files)
                     selected_count = sum(1 for f in files if f.path in selected)
                     print(
-                        f"{idx}. {category}: {len(files)} 文件, "
+                        f"{idx}. {category}: {len(files)} files, "
                         f"{self._format_size(total_size)} "
-                        f"({selected_count}/{len(files)} 已选)"
+                        f"({selected_count}/{len(files)} selected)"
                     )
 
-            print("\n操作:")
-            print("  输入编号查看类别详情")
-            print("  a. 全选")
-            print("  c. 清除选择")
-            print("  s. 显示已选文件")
-            print("  0. 返回")
+            print("\nActions:")
+            print("  Enter a number to view the category")
+            print("  a. Select all")
+            print("  c. Clear selection")
+            print("  s. Show selected files")
+            print("  0. Back")
 
-            choice = input("\n请选择: ").strip().lower()
+            choice = input("\nChoose: ").strip().lower()
 
             if choice == "0":
                 break
@@ -114,11 +114,11 @@ class InteractiveCleanupUI:
                 for _, files in categories:
                     for f in files:
                         selected.add(f.path)
-                print(f"\n已选择 {len(selected)} 个文件")
+                print(f"\nSelected {len(selected)} files")
             elif choice == "c":
                 # Clear selection
                 selected.clear()
-                print("\n已清除所有选择")
+                print("\nCleared all selections")
             elif choice == "s":
                 # Show selected files
                 self._display_selected_files(list(selected))
@@ -128,7 +128,7 @@ class InteractiveCleanupUI:
                 category, files = categories[idx]
                 self._display_category_details(category, files, selected)
             else:
-                print("无效选择")
+                print("Invalid choice")
 
         return list(selected)
 
@@ -146,22 +146,22 @@ class InteractiveCleanupUI:
 
         # Define risk level order and descriptions
         risk_levels = [
-            ("safe", "安全删除", report.by_risk.get("safe", [])),
+            ("safe", "Safe to delete", report.by_risk.get("safe", [])),
             (
                 "confirm_needed",
-                "需要确认",
+                "Needs confirmation",
                 report.by_risk.get("confirm_needed", []),
             ),
             (
                 "protected",
-                "受保护",
+                "Protected",
                 report.by_risk.get("protected", []),
             ),
         ]
 
         while True:
             print("\n" + "=" * 60)
-            print("按风险等级分类")
+            print("By risk level")
             print("=" * 60)
 
             for idx, (key, label, files) in enumerate(risk_levels, 1):
@@ -169,19 +169,19 @@ class InteractiveCleanupUI:
                     total_size = sum(f.size for f in files)
                     selected_count = sum(1 for f in files if f.path in selected)
                     print(
-                        f"{idx}. {label}: {len(files)} 文件, "
+                        f"{idx}. {label}: {len(files)} files, "
                         f"{self._format_size(total_size)} "
-                        f"({selected_count}/{len(files)} 已选)"
+                        f"({selected_count}/{len(files)} selected)"
                     )
 
-            print("\n操作:")
-            print("  输入编号查看类别详情")
-            print("  a. 全选安全文件")
-            print("  c. 清除选择")
-            print("  s. 显示已选文件")
-            print("  0. 返回")
+            print("\nActions:")
+            print("  Enter a number to view the category")
+            print("  a. Select all safe files")
+            print("  c. Clear selection")
+            print("  s. Show selected files")
+            print("  0. Back")
 
-            choice = input("\n请选择: ").strip().lower()
+            choice = input("\nChoose: ").strip().lower()
 
             if choice == "0":
                 break
@@ -189,10 +189,10 @@ class InteractiveCleanupUI:
                 # Select all safe files
                 for f in report.by_risk.get("safe", []):
                     selected.add(f.path)
-                print(f"\n已选择 {len(selected)} 个文件")
+                print(f"\nSelected {len(selected)} files")
             elif choice == "c":
                 selected.clear()
-                print("\n已清除所有选择")
+                print("\nCleared all selections")
             elif choice == "s":
                 self._display_selected_files(list(selected))
             elif choice.isdigit() and 1 <= int(choice) <= len(risk_levels):
@@ -201,7 +201,7 @@ class InteractiveCleanupUI:
                 if files:
                     self._display_category_details(label, files, selected)
             else:
-                print("无效选择")
+                print("Invalid choice")
 
         return list(selected)
 
@@ -223,7 +223,7 @@ class InteractiveCleanupUI:
 
         while True:
             print("\n" + "=" * 60)
-            print("按时间分类")
+            print("By age")
             print("=" * 60)
 
             for idx, (age_group, files) in enumerate(age_groups, 1):
@@ -232,33 +232,33 @@ class InteractiveCleanupUI:
                     avg_age = self._calculate_average_age(files)
                     selected_count = sum(1 for f in files if f.path in selected)
                     print(
-                        f"{idx}. {age_group}: {len(files)} 文件, "
+                        f"{idx}. {age_group}: {len(files)} files, "
                         f"{self._format_size(total_size)}, "
-                        f"平均年龄 {avg_age:.0f} 天 "
-                        f"({selected_count}/{len(files)} 已选)"
+                        f"average age {avg_age:.0f} days "
+                        f"({selected_count}/{len(files)} selected)"
                     )
 
-            print("\n操作:")
-            print("  输入编号查看类别详情")
-            print("  a. 全选陈旧文件(>30天)")
-            print("  c. 清除选择")
-            print("  s. 显示已选文件")
-            print("  0. 返回")
+            print("\nActions:")
+            print("  Enter a number to view the category")
+            print("  a. Select all old files (>30 days)")
+            print("  c. Clear selection")
+            print("  s. Show selected files")
+            print("  0. Back")
 
-            choice = input("\n请选择: ").strip().lower()
+            choice = input("\nChoose: ").strip().lower()
 
             if choice == "0":
                 break
             elif choice == "a":
                 # Select old files (> 30 days)
                 for age_group, files in age_groups:
-                    if "30天以上" in age_group or "90" in age_group:
+                    if "over 30 days" in age_group or "90" in age_group:
                         for f in files:
                             selected.add(f.path)
-                print(f"\n已选择 {len(selected)} 个文件")
+                print(f"\nSelected {len(selected)} files")
             elif choice == "c":
                 selected.clear()
-                print("\n已清除所有选择")
+                print("\nCleared all selections")
             elif choice == "s":
                 self._display_selected_files(list(selected))
             elif choice.isdigit() and 1 <= int(choice) <= len(age_groups):
@@ -267,7 +267,7 @@ class InteractiveCleanupUI:
                 if files:
                     self._display_category_details(age_group, files, selected)
             else:
-                print("无效选择")
+                print("Invalid choice")
 
         return list(selected)
 
@@ -284,34 +284,34 @@ class InteractiveCleanupUI:
         selected: Set[Tuple[str, int]] = set()
 
         if not report.duplicates:
-            print("\n未发现重复文件")
+            print("\nNo duplicate files found")
             return []
 
         while True:
             print("\n" + "=" * 60)
-            print("重复文件组")
+            print("Duplicate groups")
             print("=" * 60)
 
             for idx, dup_group in enumerate(report.duplicates[:20], 1):  # Show first 20
                 selected_in_group = sum(1 for f in dup_group.files if (f.path, idx) in selected)
                 print(
-                    f"{idx}. {dup_group.count} 个重复文件, "
-                    f"{self._format_size(dup_group.size)} 每个, "
-                    f"可回收 {self._format_size(dup_group.reclaimable_space)} "
-                    f"({selected_in_group}/{dup_group.count} 已选)"
+                    f"{idx}. {dup_group.count} duplicate files, "
+                    f"{self._format_size(dup_group.size)} each, "
+                    f"reclaimable {self._format_size(dup_group.reclaimable_space)} "
+                    f"({selected_in_group}/{dup_group.count} selected)"
                 )
 
             if len(report.duplicates) > 20:
-                print(f"\n... 还有 {len(report.duplicates) - 20} 组重复文件")
+                print(f"\n... {len(report.duplicates) - 20} more duplicate groups")
 
-            print("\n操作:")
-            print("  输入编号查看组详情")
-            print("  a. 全选重复文件(每组保留1个)")
-            print("  c. 清除选择")
-            print("  s. 显示已选文件")
-            print("  0. 返回")
+            print("\nActions:")
+            print("  Enter a number to view the group")
+            print("  a. Select all duplicates (keep 1 per group)")
+            print("  c. Clear selection")
+            print("  s. Show selected files")
+            print("  0. Back")
 
-            choice = input("\n请选择: ").strip().lower()
+            choice = input("\nChoose: ").strip().lower()
 
             if choice == "0":
                 break
@@ -321,10 +321,10 @@ class InteractiveCleanupUI:
                     # Select all but the first file in each group
                     for file in dup_group.files[1:]:
                         selected.add((file.path, idx))
-                print(f"\n已选择 {len(selected)} 个重复文件")
+                print(f"\nSelected {len(selected)} duplicate files")
             elif choice == "c":
                 selected.clear()
-                print("\n已清除所有选择")
+                print("\nCleared all selections")
             elif choice == "s":
                 self._display_selected_duplicates(
                     [(path, idx) for path, idx in selected], report.duplicates
@@ -334,7 +334,7 @@ class InteractiveCleanupUI:
                 dup_group = report.duplicates[idx - 1]
                 self._display_duplicate_group_details(idx, dup_group, selected)
             else:
-                print("无效选择")
+                print("Invalid choice")
 
         return [(path, idx) for path, idx in selected]
 
@@ -362,18 +362,18 @@ class InteractiveCleanupUI:
 
         while True:
             print("\n" + "=" * 60)
-            print(f"详细文件列表 (第 {current_page + 1}/{total_pages} 页)")
+            print(f"Detailed file list (page {current_page + 1}/{total_pages})")
             print("=" * 60)
 
             start = current_page * page_size
             end = min(start + page_size, len(all_files))
             page_files = all_files[start:end]
 
-            print(f"{'序号':<6} {'文件名':<30} {'大小':>12} {'修改时间':<20} {'状态':<6}")
+            print(f"{'No.':<6} {'Name':<30} {'Size':>12} {'Modified':<20} {'Sel':<6}")
             print("-" * 80)
 
             for i, file in enumerate(page_files, start + 1):
-                status = "✓" if file.path in selected else " "
+                status = "x" if file.path in selected else " "
                 mtime_str = datetime.fromtimestamp(file.mtime).strftime("%Y-%m-%d %H:%M")
                 print(
                     f"{i:<6} {file.name[:30]:<30} "
@@ -382,16 +382,16 @@ class InteractiveCleanupUI:
                     f"[{status}]"
                 )
 
-            print("\n操作:")
-            print("  输入编号选择/取消选择文件")
-            print("  n. 下一页")
-            print("  p. 上一页")
-            print("  a. 全选当前页")
-            print("  c. 清除所有选择")
-            print("  s. 显示已选文件")
-            print("  0. 返回")
+            print("\nActions:")
+            print("  Enter a number to select/deselect a file")
+            print("  n. Next page")
+            print("  p. Previous page")
+            print("  a. Select current page")
+            print("  c. Clear all selections")
+            print("  s. Show selected files")
+            print("  0. Back")
 
-            choice = input(f"\n请选择 (第{current_page + 1}页): ").strip().lower()
+            choice = input(f"\nChoose (page {current_page + 1}): ").strip().lower()
 
             if choice == "0":
                 break
@@ -403,10 +403,10 @@ class InteractiveCleanupUI:
                 # Select all on current page
                 for file in page_files:
                     selected.add(file.path)
-                print(f"已选择当前页 {len(page_files)} 个文件")
+                print(f"Selected {len(page_files)} files on this page")
             elif choice == "c":
                 selected.clear()
-                print("\n已清除所有选择")
+                print("\nCleared all selections")
             elif choice == "s":
                 self._display_selected_files(list(selected))
             elif choice.isdigit():
@@ -419,7 +419,7 @@ class InteractiveCleanupUI:
                     else:
                         selected.add(file.path)
             else:
-                print("无效选择")
+                print("Invalid choice")
 
         return list(selected)
 
@@ -427,11 +427,11 @@ class InteractiveCleanupUI:
         self, category: str, files: List[FileInfo], selected: Set[str]
     ) -> None:
         """Display details of files in a category."""
-        print(f"\n{category} - 文件列表")
+        print(f"\n{category} - files")
         print("-" * 80)
 
         for i, file in enumerate(files[:20], 1):  # Show first 20
-            status = "✓" if file.path in selected else " "
+            status = "x" if file.path in selected else " "
             mtime_str = datetime.fromtimestamp(file.mtime).strftime("%Y-%m-%d %H:%M")
             print(
                 f"{i:3}. [{status}] {file.name:<40} "
@@ -440,54 +440,54 @@ class InteractiveCleanupUI:
             )
 
         if len(files) > 20:
-            print(f"\n... 还有 {len(files) - 20} 个文件")
+            print(f"\n... {len(files) - 20} more files")
 
-        print("\n操作: 输入编号选择/取消选择，或 0 返回")
-        choice = input("请选择: ").strip()
+        print("\nActions: enter a number to select/deselect, or 0 to go back")
+        choice = input("Choose: ").strip()
 
         if choice.isdigit() and 1 <= int(choice) <= min(len(files), 20):
             idx = int(choice) - 1
             file = files[idx]
             if file.path in selected:
                 selected.remove(file.path)
-                print(f"\n已取消选择: {file.name}")
+                print(f"\nDeselected: {file.name}")
             else:
                 selected.add(file.path)
-                print(f"\n已选择: {file.name}")
+                print(f"\nSelected: {file.name}")
 
     def _display_duplicate_group_details(
         self, group_idx: int, dup_group, selected: Set[Tuple[str, int]]
     ) -> None:
         """Display details of duplicate files in a group."""
-        print(f"\n重复文件组 #{group_idx}")
-        print(f"文件大小: {self._format_size(dup_group.size)}")
-        print(f"哈希值: {dup_group.hash_value[:16]}...")
+        print(f"\nDuplicate group #{group_idx}")
+        print(f"File size: {self._format_size(dup_group.size)}")
+        print(f"Hash: {dup_group.hash_value[:16]}...")
         print("-" * 80)
 
         for i, file in enumerate(dup_group.files, 1):
-            status = "✓" if (file.path, group_idx) in selected else " "
+            status = "x" if (file.path, group_idx) in selected else " "
             print(f"{i}. [{status}] {file.path}")
 
-        print("\n操作: 输入编号选择/取消选择文件，或 0 返回")
-        choice = input("请选择: ").strip()
+        print("\nActions: enter a number to select/deselect a file, or 0 to go back")
+        choice = input("Choose: ").strip()
 
         if choice.isdigit() and 1 <= int(choice) <= len(dup_group.files):
             idx = int(choice) - 1
             file = dup_group.files[idx]
             if (file.path, group_idx) in selected:
                 selected.remove((file.path, group_idx))
-                print(f"\n已取消选择: {file.path}")
+                print(f"\nDeselected: {file.path}")
             else:
                 selected.add((file.path, group_idx))
-                print(f"\n已选择: {file.path}")
+                print(f"\nSelected: {file.path}")
 
     def _display_selected_files(self, selected_paths: List[str]) -> None:
         """Display list of selected files."""
         if not selected_paths:
-            print("\n未选择任何文件")
+            print("\nNo files selected")
             return
 
-        print(f"\n已选择的文件 ({len(selected_paths)} 个):")
+        print(f"\nSelected files ({len(selected_paths)}):")
         print("-" * 80)
 
         total_size = 0
@@ -498,26 +498,26 @@ class InteractiveCleanupUI:
                 total_size += file.stat().st_size
 
         if len(selected_paths) > 20:
-            print(f"\n... 还有 {len(selected_paths) - 20} 个文件")
+            print(f"\n... {len(selected_paths) - 20} more files")
 
-        print(f"\n总计: {len(selected_paths)} 个文件, {self._format_size(total_size)}")
+        print(f"\nTotal: {len(selected_paths)} files, {self._format_size(total_size)}")
 
     def _display_selected_duplicates(
         self, selected: List[Tuple[str, int]], duplicates: list
     ) -> None:
         """Display list of selected duplicate files."""
         if not selected:
-            print("\n未选择任何重复文件")
+            print("\nNo duplicate files selected")
             return
 
-        print(f"\n已选择的重复文件 ({len(selected)} 个):")
+        print(f"\nSelected duplicate files ({len(selected)}):")
         print("-" * 80)
 
         for path, group_idx in selected[:20]:
-            print(f"组 #{group_idx}: {path}")
+            print(f"Group #{group_idx}: {path}")
 
         if len(selected) > 20:
-            print(f"\n... 还有 {len(selected) - 20} 个文件")
+            print(f"\n... {len(selected) - 20} more files")
 
     def _calculate_average_age(self, files: List[FileInfo]) -> float:
         """Calculate average age of files in days."""
@@ -530,11 +530,11 @@ class InteractiveCleanupUI:
 
     def _get_age_order(self, age_group: str) -> int:
         """Get sort order for age groups."""
-        if "7天" in age_group:
+        if "7 days" in age_group:
             return 1
-        elif "30天" in age_group:
+        elif "30 days" in age_group:
             return 2
-        elif "90天" in age_group:
+        elif "90 days" in age_group:
             return 3
         else:
             return 4
@@ -567,7 +567,7 @@ class InteractiveCleanupUI:
             True if cleanup was performed, False if cancelled.
         """
         if not files_to_delete:
-            print("\n未选择要删除的文件")
+            print("\nNo files selected for deletion")
             return False
 
         # Calculate statistics
@@ -584,7 +584,7 @@ class InteractiveCleanupUI:
                     pass
 
         if not valid_files:
-            print("\n选定的文件不存在或无法访问")
+            print("\nThe selected files do not exist or cannot be accessed")
             return False
 
         # Display cleanup summary
@@ -592,48 +592,48 @@ class InteractiveCleanupUI:
 
         # Request final confirmation
         if dry_run:
-            print("\n[预览模式] 不会实际删除文件")
-            print("如要执行删除，请重新运行时不使用 --dry-run 参数")
+            print("\n[Preview] No files will be deleted")
+            print("To delete, run again without --dry-run")
             return False
 
-        confirmation = input("\n确认删除以上文件？(输入 YES 继续): ").strip()
+        confirmation = input("\nDelete the files above? (type YES to continue): ").strip()
 
         if confirmation != "YES":
-            print("\n操作已取消")
+            print("\nCancelled")
             return False
 
         # Perform cleanup
-        print("\n开始清理...")
+        print("\nCleaning...")
         success = self._execute_cleanup(valid_files, backup)
 
         if success:
-            print("\n✓ 清理完成！")
-            print("  删除文件数: {}".format(len(valid_files)))
-            print("  释放空间: {}".format(self._format_size(total_size)))
+            print("\n[OK] Cleanup complete")
+            print("  Files deleted: {}".format(len(valid_files)))
+            print("  Space freed: {}".format(self._format_size(total_size)))
             return True
         else:
-            print("\n✗ 清理过程中出现错误")
+            print("\n[X] Errors occurred during cleanup")
             return False
 
     def _display_cleanup_summary(self, files: List[str], total_size: int, dry_run: bool) -> None:
         """Display cleanup summary before confirmation."""
         print("\n" + "=" * 60)
-        print("清理摘要")
+        print("Cleanup summary")
         print("=" * 60)
-        print("将删除 {} 个文件".format(len(files)))
-        print("释放空间: {}".format(self._format_size(total_size)))
-        print("模式: {}".format("预览 (不会实际删除)" if dry_run else "执行删除"))
+        print("{} files will be deleted".format(len(files)))
+        print("Space freed: {}".format(self._format_size(total_size)))
+        print("Mode: {}".format("Preview (nothing deleted)" if dry_run else "Delete"))
         print("=" * 60)
 
         # Show first 20 files
-        print("\n文件列表:")
+        print("\nFiles:")
         for i, file_path in enumerate(files[:20], 1):
             path = Path(file_path)
             size = path.stat().st_size if path.exists() else 0
             print(f"{i:3}. {file_path} ({self._format_size(size)})")
 
         if len(files) > 20:
-            print(f"\n... 还有 {len(files) - 20} 个文件")
+            print(f"\n... {len(files) - 20} more files")
 
         print("\n" + "=" * 60)
 
@@ -690,11 +690,11 @@ class InteractiveCleanupUI:
 
         # Report results
         if failed_files:
-            print(f"\n警告: {len(failed_files)} 个文件删除失败:")
+            print(f"\nWarning: {len(failed_files)} files were not deleted:")
             for file_path, error in failed_files[:10]:
                 print(f"  {file_path}: {error}")
             if len(failed_files) > 10:
-                print(f"  ... 还有 {len(failed_files) - 10} 个失败")
+                print(f"  ... {len(failed_files) - 10} more failures")
 
         return len(failed_files) == 0
 

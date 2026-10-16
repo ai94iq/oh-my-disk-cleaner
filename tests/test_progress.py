@@ -364,9 +364,9 @@ class TestEdgeCases:
         progress = ProgressBar(100, enable=False)
 
         # Should handle unicode without crashing
-        progress_str = progress._format_progress("文件_测试_🎉.txt")
+        progress_str = progress._format_progress("\u6587\u4ef6_\u6d4b\u8bd5_\U0001f389.txt")
 
-        assert "文件" in progress_str or "..." in progress_str
+        assert "\u6587\u4ef6" in progress_str or "..." in progress_str
 
     def test_very_small_width(self):
         """Test progress bar with very small width."""

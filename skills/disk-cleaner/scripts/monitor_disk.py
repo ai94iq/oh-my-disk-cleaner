@@ -199,7 +199,7 @@ class DiskMonitor:
             # Build usage bar
             bar_length = 30
             filled = int(bar_length * usage / 100)
-            bar = "█" * filled + "░" * (bar_length - filled)
+            bar = "#" * filled + "-" * (bar_length - filled)
 
             print(f"\n{indicator} {path}")
             print(f"  Usage: [{bar}] {usage}%")
@@ -212,7 +212,7 @@ class DiskMonitor:
 
         # Summary
         summary = results["summary"]
-        print(f"\n{'─'*70}")
+        print(f"\n{'-'*70}")
         print(
             f"Summary: {summary['total_drives']} drive(s), "
             f"{summary['critical']} critical, {summary['warning']} warning"

@@ -29,7 +29,7 @@ def scan_real_directory(path: Path, name: str) -> dict:
     print(f"{'='*60}")
 
     if not path.exists():
-        print(f"❌ Path does not exist: {path}")
+        print(f"[X] Path does not exist: {path}")
         return {"error": "Path does not exist", "name": name}
 
     # Quick profiling first
@@ -103,7 +103,7 @@ def main():
             if "error" not in result:
                 results.append(result)
         except Exception as e:
-            print(f"\n❌ Error scanning {path_str}: {e}")
+            print(f"\n[X] Error scanning {path_str}: {e}")
 
     # Summary
     print("\n\n" + "=" * 60)
@@ -136,7 +136,7 @@ def main():
         for r in results:
             if r["file_count"] >= 10000:
                 target_met = r["scan_time"] < 30
-                status = "✅ PASS" if target_met else "❌ FAIL"
+                status = "[PASS]" if target_met else "[FAIL]"
                 print(f"  {r['name']}: {r['scan_time']:.2f}s vs 30s target {status}")
 
         # Save results

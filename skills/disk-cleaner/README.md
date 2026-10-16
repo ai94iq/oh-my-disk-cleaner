@@ -1,67 +1,14 @@
-# Disk Cleaner Skill
+# Disk cleaner skill
 
-A high-performance cross-platform disk space monitoring, analysis, and cleaning toolkit for Claude Code.
+Agent skill that finds what is using disk space and frees it safely on
+Windows, macOS and Linux. Requires Python 3.11 or newer; nothing to install.
 
-## Quick Start
+- Workflow, scripts and safety rules: [SKILL.md](SKILL.md)
+- Install, development and tests: the repository
+  [README](https://github.com/ai94iq/oh-my-disk-cleaner#readme)
 
-### As Claude Code Skill
-
-Install directly from GitHub:
-
-```bash
-npx add-skill gccszs/disk-cleaner
-```
-
-### Manual Installation
-
-1. Download `disk-cleaner.skill` from the [Releases](https://github.com/gccszs/disk-cleaner/releases) page
-2. Install via Claude Code: `/skill install path/to/disk-cleaner.skill`
-
-## Features
-
-- **Disk Space Analysis**: Identify large files and directories consuming space
-- **Smart Cleanup**: Safe removal of temporary files, caches, logs
-- **Duplicate Detection**: Find and remove duplicate files
-- **Disk Monitoring**: Real-time monitoring with alert thresholds
-- **Cross-Platform**: Windows, Linux, macOS support
-- **3-5x Faster**: Optimized scanning with os.scandir()
-
-## Usage
-
-### Analyze Disk Space
+Quick check that the folder is complete:
 
 ```bash
-python scripts/analyze_disk.py --top 50
+python scripts/check_skill.py
 ```
-
-### Clean Junk Files (Preview)
-
-```bash
-python scripts/clean_disk.py --dry-run
-```
-
-### Monitor Disk Usage
-
-```bash
-python scripts/monitor_disk.py --watch
-```
-
-## Skill Structure
-
-```
-disk-cleaner/
-├── SKILL.md           # Skill definition
-├── README.md          # This file
-├── diskcleaner/       # Core Python module
-├── scripts/           # Executable scripts
-└── references/        # Reference documentation
-```
-
-## Documentation
-
-- [Full Skill Documentation](SKILL.md)
-- [Project Repository](https://github.com/gccszs/disk-cleaner)
-
-## License
-
-MIT License

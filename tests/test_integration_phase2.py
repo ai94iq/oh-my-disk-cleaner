@@ -146,10 +146,10 @@ def test_report_summary_generation():
         summary = engine.get_summary(report)
 
         # Verify summary contains key information
-        assert "磁盘清理分析报告" in summary
-        assert "扫描路径" in summary
-        assert "文件统计" in summary
-        assert "可回收空间" in summary
+        assert "Disk Cleanup Analysis Report" in summary
+        assert "Scan path" in summary
+        assert "File statistics" in summary
+        assert "Reclaimable space" in summary
         # Check for path (Windows may expand paths differently, so check for key parts)
         assert temp_path.name in summary or "Temp" in summary
         assert "2300" in summary or "2.2" in summary or "2.25" in summary  # Total size

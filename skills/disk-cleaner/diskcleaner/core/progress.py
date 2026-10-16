@@ -27,7 +27,7 @@ class ProgressBar:
         >>> progress.close()
 
     Display format:
-        Scanning [████████░░░░░░] 45.2% (1234/2718) | ETA: 0:15 | /tmp/file.log
+        Scanning [########------] 45.2% (1234/2718) | ETA: 0:15 | /tmp/file.log
     """
 
     def __init__(
@@ -121,7 +121,7 @@ class ProgressBar:
 
         # Build progress bar
         filled = int(self.width * percent)
-        bar = "█" * filled + "░" * (self.width - filled)
+        bar = "#" * filled + "-" * (self.width - filled)
 
         # Calculate ETA
         elapsed = time.time() - self.start_time
@@ -209,7 +209,7 @@ class IndeterminateProgress:
     """
 
     # Spinner frames
-    _spinner_frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+    _spinner_frames = ["|", "/", "-", "\\"]
 
     def __init__(self, prefix: str = "", enable: Optional[bool] = None):
         """
@@ -297,7 +297,7 @@ class IndeterminateProgress:
 
             # Show completion message
             sys.stdout.write(
-                f"\r{self.prefix} ✓ Completed ({self.item_count} items in {elapsed_str})\n"
+                f"\r{self.prefix} [OK] Completed ({self.item_count} items in {elapsed_str})\n"
             )
             sys.stdout.flush()
 

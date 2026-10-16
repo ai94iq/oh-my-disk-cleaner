@@ -325,23 +325,23 @@ class WindowsPlatform:
                 "path": os.path.join(
                     os.environ.get("WINDIR", "C:\\Windows"), "SoftwareDistribution", "Download"
                 ),
-                "description": "Windows Update下载的临时文件",
+                "description": "Temporary files downloaded by Windows Update",
                 "risk": "safe",
-                "size_hint": "几百MB到数GB",
+                "size_hint": "Hundreds of MB to several GB",
             },
             "recycle_bin": {
-                "name": "回收站",
+                "name": "Recycle Bin",
                 "path": os.path.join(os.environ.get("SYSTEMDRIVE", "C:"), "$Recycle.Bin"),
-                "description": "已删除的文件（清空前请确认）",
+                "description": "Deleted files (confirm before emptying)",
                 "risk": "confirm",
-                "size_hint": "取决于删除的文件",
+                "size_hint": "Depends on the deleted files",
             },
             "prefetch": {
-                "name": "Prefetch缓存",
+                "name": "Prefetch cache",
                 "path": os.path.join(os.environ.get("WINDIR", "C:\\Windows"), "Prefetch"),
-                "description": "应用程序预读数据（可安全删除）",
+                "description": "Application prefetch data (safe to delete)",
                 "risk": "safe",
-                "size_hint": "几十MB",
+                "size_hint": "Tens of MB",
             },
         }
 

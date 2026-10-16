@@ -1,7 +1,7 @@
 """
 Large-scale performance test with intelligent sampling.
 
-Tests real-world scenarios with emoji-enhanced terminal UI and graceful fallback.
+Tests real-world scenarios with plain ASCII terminal output.
 """
 
 import json
@@ -16,22 +16,7 @@ from diskcleaner.optimization.scan import ConcurrentScanner, QuickProfiler
 
 
 class SafeTerminal:
-    """Safe terminal output with encoding detection and emoji fallback."""
-
-    def __init__(self):
-        """Detect terminal encoding capabilities."""
-        self.encoding = sys.stdout.encoding or "utf-8"
-        self.supports_emoji = self._check_emoji_support()
-
-    def _check_emoji_support(self) -> bool:
-        """Check if terminal supports emoji."""
-        try:
-            # Try to print emoji
-            test_emoji = "✅"
-            test_emoji.encode(self.encoding)
-            return True
-        except (UnicodeEncodeError, LookupError):
-            return False
+    """Terminal output that never fails on encoding."""
 
     def print(self, text: str):
         """Safe print with encoding fallback."""
@@ -41,10 +26,6 @@ class SafeTerminal:
             # Fallback to ASCII
             ascii_text = text.encode("ascii", "ignore").decode("ascii")
             print(ascii_text)
-
-    def emoji(self, emoji_text: str, ascii_fallback: str) -> str:
-        """Get appropriate symbol based on terminal support."""
-        return emoji_text if self.supports_emoji else ascii_fallback
 
 
 class LargeScalePerformanceTest:
@@ -71,8 +52,8 @@ class LargeScalePerformanceTest:
         Returns:
             List of directory info dicts
         """
-        check = self.terminal.emoji("✓", "[OK]")
-        search = self.terminal.emoji("🔍", "[SCAN]")
+        check = "[OK]"
+        search = "[SCAN]"
         divider = "=" * 60
 
         self.terminal.print(f"\n{divider}")
@@ -94,7 +75,7 @@ class LargeScalePerformanceTest:
         try:
             subdirs = [d for d in d_path.iterdir() if d.is_dir() and not d.is_symlink()]
         except PermissionError:
-            self.terminal.print("⚠️ Permission denied for some directories")
+            self.terminal.print("[WARN] Permission denied for some directories")
             subdirs = []
 
         # Analyze each subdirectory
@@ -137,7 +118,7 @@ class LargeScalePerformanceTest:
                     "error": str(e),
                 }
                 dir_infos.append(dir_info)
-                self.terminal.print(f"  ⚠️ {subdir.name:<30} (skipped: {type(e).__name__})")
+                self.terminal.print(f"  [WARN] {subdir.name:<30} (skipped: {type(e).__name__})")
 
         return dir_infos
 
@@ -150,7 +131,7 @@ class LargeScalePerformanceTest:
         Returns:
             Selected directories for testing
         """
-        rocket = self.terminal.emoji("🚀", "[SEL]")
+        rocket = "[SEL]"
         divider = "=" * 60
 
         self.terminal.print(f"\n{divider}")
@@ -182,7 +163,7 @@ class LargeScalePerformanceTest:
         large_count = len([d for d in selected if d.get("estimated_files", 0) >= 10000])
         medium_count = len([d for d in selected if 1000 <= d.get("estimated_files", 0) < 10000])
         small_count = len([d for d in selected if d.get("estimated_files", 0) < 1000])
-        self.terminal.print(f"  Large dirs (≥10K): {large_count}")
+        self.terminal.print(f"  Large dirs (>=10K): {large_count}")
         self.terminal.print(f"  Medium dirs (1K-10K): {medium_count}")
         self.terminal.print(f"  Small dirs (<1K): {small_count}")
 
@@ -201,7 +182,7 @@ class LargeScalePerformanceTest:
         """
         path = Path(dir_info["path"])
         name = dir_info["name"]
-        search = self.terminal.emoji("🔍", "[TEST]")
+        search = "[TEST]"
 
         self.terminal.print(f"\n[{index}/{total}] {search} Testing: {name}")
 
@@ -222,15 +203,15 @@ class LargeScalePerformanceTest:
                     # Can't show percentage without total estimate
                     bar_length = min(20, int((elapsed % 5) / 5 * 20))  # Animated bar based on time
 
-                    bar = self.terminal.emoji("█", "=") * bar_length
-                    bar += self.terminal.emoji("░", "-") * (20 - bar_length)
+                    bar = "=" * bar_length
+                    bar += "-" * (20 - bar_length)
 
                     stats = (
                         f"\r     {bar} | "
-                        f"📊 {files_scanned:,} files | "
-                        f"⚡ {throughput:,.0f}/s | "
-                        f"⏱️ {elapsed:.2f}s | "
-                        f"❌ {errors}"
+                        f"{files_scanned:,} files | "
+                        f"{throughput:,.0f}/s | "
+                        f"{elapsed:.2f}s | "
+                        f"errors: {errors}"
                     )
 
                     try:
@@ -259,9 +240,9 @@ class LargeScalePerformanceTest:
             target_met = self._check_target(result.total_count, scan_time)
 
             check = (
-                self.terminal.emoji("✅", "[OK]")
+                "[OK]"
                 if target_met
-                else self.terminal.emoji("⚠️", "[WARN]")
+                else "[WARN]"
             )
 
             # Print result
@@ -290,7 +271,7 @@ class LargeScalePerformanceTest:
 
         except Exception as e:
             # Graceful error handling
-            self.terminal.print(f"     ⚠️ Failed: {type(e).__name__}: {e}")
+            self.terminal.print(f"     [WARN] Failed: {type(e).__name__}: {e}")
             return {
                 "name": name,
                 "path": str(path),
@@ -323,7 +304,7 @@ class LargeScalePerformanceTest:
         Returns:
             (all_passed, recommendation)
         """
-        chart = self.terminal.emoji("📊", "[STAT]")
+        chart = "[STAT]"
         divider = "=" * 60
 
         self.terminal.print(f"\n{divider}")
@@ -354,9 +335,9 @@ class LargeScalePerformanceTest:
         # Target status
         all_passed = targets_passed == len(successful) and len(failed) == 0
         status = (
-            self.terminal.emoji("✅", "[PASS]")
+            "[PASS]"
             if all_passed
-            else self.terminal.emoji("⚠️", "[WARN]")
+            else "[WARN]"
         )
         self.terminal.print(f"\n{status} Targets: {targets_passed}/{len(successful)} passed")
 
@@ -370,7 +351,7 @@ class LargeScalePerformanceTest:
         else:
             recommendation = "Some targets missed - Review results before full scan"
 
-        self.terminal.print(f"\n💡 Recommendation: {recommendation}")
+        self.terminal.print(f"\nRecommendation: {recommendation}")
 
         return all_passed, recommendation
 
@@ -395,9 +376,9 @@ class LargeScalePerformanceTest:
                     ensure_ascii=False,
                 )
 
-            self.terminal.print(f"\n💾 Detailed results saved to: {output_file}")
+            self.terminal.print(f"\nDetailed results saved to: {output_file}")
         except Exception as e:
-            self.terminal.print(f"\n⚠️ Failed to save results: {e}")
+            self.terminal.print(f"\n[WARN] Failed to save results: {e}")
 
     def run_full_test(self, d_path: Path = None) -> bool:
         """Run complete large-scale test suite.
@@ -411,7 +392,7 @@ class LargeScalePerformanceTest:
         if d_path is None:
             d_path = Path("D:/")
 
-        rocket = self.terminal.emoji("🚀", "[START]")
+        rocket = "[START]"
         divider = "=" * 60
 
         self.terminal.print(f"\n{divider}")
@@ -427,7 +408,7 @@ class LargeScalePerformanceTest:
         selected = self.select_representative_directories(dir_infos)
 
         # Phase 3: Test directories
-        test = self.terminal.emoji("🧪", "[TEST]")
+        test = "[TEST]"
         self.terminal.print(f"\n{divider}")
         self.terminal.print(f"{test} Phase 3: Testing Selected Directories")
         self.terminal.print(divider)
@@ -446,7 +427,7 @@ class LargeScalePerformanceTest:
         # Final summary
         total_elapsed = time.time() - self.start_time
         self.terminal.print(f"\n{divider}")
-        self.terminal.print(f"⏱️ Total test time: {total_elapsed:.2f}s")
+        self.terminal.print(f"Total test time: {total_elapsed:.2f}s")
         self.terminal.print(divider)
 
         return all_passed

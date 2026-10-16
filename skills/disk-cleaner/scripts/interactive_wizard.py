@@ -73,7 +73,7 @@ class InteractiveWizard:
             # Step 3: Perform scan
             report = self._perform_scan()
             if not report:
-                print("\n扫描未返回结果")
+                print("\nThe scan returned no results")
                 return False
 
             # Step 4: Display and select files
@@ -81,7 +81,7 @@ class InteractiveWizard:
 
             # Step 5: Multi-level confirmation
             if not self.selected_files:
-                print("\n未选择任何文件")
+                print("\nNo files selected")
                 return False
 
             if not self._confirm_cleanup():
@@ -91,10 +91,10 @@ class InteractiveWizard:
             return self._execute_cleanup()
 
         except KeyboardInterrupt:
-            print("\n\n操作已取消")
+            print("\n\nCancelled")
             return False
         except Exception as e:
-            print(f"\n错误: {e}")
+            print(f"\nError: {e}")
             import traceback
             traceback.print_exc()
             return False
@@ -107,27 +107,27 @@ class InteractiveWizard:
             True if user wants to continue, False otherwise.
         """
         print("\n" + "=" * 60)
-        print("   磁盘清理向导")
+        print("   Disk Cleanup Wizard")
         print("=" * 60)
         print()
-        print("欢迎使用磁盘清理工具！")
+        print("Welcome to the disk cleanup tool.")
         print()
-        print("功能特性:")
-        print("  - 智能分类：按类型、风险、时间三维分析")
-        print("  - 安全第一：多重确认，误删保护")
-        print("  - 重复文件：快速识别并清理重复内容")
-        print("  - 增量扫描：缓存机制，提升性能")
+        print("Features:")
+        print("  - Classification by type, risk and age")
+        print("  - Safety first: several confirmations, protected paths")
+        print("  - Duplicates: find and remove duplicate content")
+        print("  - Incremental scans: cached results speed up repeat scans")
         print()
-        print("安全承诺:")
-        print("  1. 不会删除任何文件，除非您明确确认")
-        print("  2. 所有操作都需要您输入 'YES' 确认")
-        print("  3. 危险操作需要额外输入 'I UNDERSTAND'")
-        print("  4. 所有删除操作都会记录日志")
-        print("  5. 可选备份功能，保护重要文件")
+        print("Safety rules:")
+        print("  1. Nothing is deleted unless you confirm it")
+        print("  2. Every deletion needs you to type 'YES'")
+        print("  3. Risky deletions also need 'I UNDERSTAND'")
+        print("  4. Every deletion is logged")
+        print("  5. Optional backups protect important files")
         print()
         print("=" * 60)
 
-        choice = input("\n是否继续？ [Y/n]: ").strip().lower()
+        choice = input("\nContinue? [Y/n]: ").strip().lower()
         return choice in ("", "y", "yes")
 
     def _select_scan_mode(self) -> Optional[str]:
@@ -139,44 +139,44 @@ class InteractiveWizard:
         """
         while True:
             print("\n" + "=" * 60)
-            print("   选择扫描模式")
+            print("   Choose a scan mode")
             print("=" * 60)
             print()
-            print("1. 快速扫描 (1秒)")
-            print("   - 扫描常见临时文件位置")
-            print("   - 适合日常清理")
+            print("1. Quick scan (1 second)")
+            print("   - Common temp file locations")
+            print("   - Good for routine cleanup")
             print()
-            print("2. 标准扫描 (2分钟)")
-            print("   - 全面扫描当前目录")
-            print("   - 包含子目录")
-            print("   - 推荐模式")
+            print("2. Standard scan (2 minutes)")
+            print("   - Full scan of the target folder")
+            print("   - Includes subfolders")
+            print("   - Recommended")
             print()
-            print("3. 深度扫描 (无限制)")
-            print("   - 扫描所有文件")
-            print("   - 可能需要较长时间")
-            print("   - 适合彻底清理")
+            print("3. Deep scan (no limit)")
+            print("   - Scans every file")
+            print("   - Can take a long time")
+            print("   - Good for a thorough cleanup")
             print()
-            print("4. 渐进式扫描")
-            print("   - 使用缓存增量扫描")
-            print("   - 后续扫描更快")
-            print("   - 适合定期清理")
+            print("4. Progressive scan")
+            print("   - Incremental scan using the cache")
+            print("   - Later scans are faster")
+            print("   - Good for regular cleanup")
             print()
-            print("5. 自定义扫描")
-            print("   - 自定义扫描参数")
-            print("   - 高级选项")
+            print("5. Custom scan")
+            print("   - Choose the scan limits")
+            print("   - Advanced options")
             print()
-            print("0. 退出")
+            print("0. Exit")
             print()
             print("=" * 60)
 
-            choice = input("\n请选择 (0-5): ").strip()
+            choice = input("\nChoose (0-5): ").strip()
 
             if choice == "0":
                 return None
             elif choice in ("1", "2", "3", "4", "5"):
                 return self._get_scan_mode_config(choice)
             else:
-                print("无效选择，请重试")
+                print("Invalid choice, try again")
 
     def _get_scan_mode_config(self, mode: str) -> str:
         """
@@ -204,8 +204,8 @@ class InteractiveWizard:
         Returns:
             CleanupReport if successful, None otherwise.
         """
-        print(f"\n正在扫描: {self.target_path}")
-        print(f"扫描模式: {self._get_scan_mode_name(self.scan_mode)}")
+        print(f"\nScanning: {self.target_path}")
+        print(f"Scan mode: {self._get_scan_mode_name(self.scan_mode)}")
         print()
 
         # Configure scanner based on mode
@@ -245,8 +245,8 @@ class InteractiveWizard:
             )
         else:  # custom
             # Ask user for custom parameters
-            max_files = self._ask_custom_param("最大文件数 (默认无限制): ", None)
-            max_seconds = self._ask_custom_param("最大扫描时间/秒 (默认无限制): ", None)
+            max_files = self._ask_custom_param("Maximum files (default: no limit): ", None)
+            max_seconds = self._ask_custom_param("Maximum scan time in seconds (default: no limit): ", None)
 
             scanner = DirectoryScanner(
                 str(self.target_path),
@@ -259,13 +259,13 @@ class InteractiveWizard:
         # Perform scan with progress indication
         try:
             # Use indeterminate progress for scanning
-            with IndeterminateProgress("扫描中", enable=True) as progress:
+            with IndeterminateProgress("Scanning", enable=True) as progress:
                 # Monkey-patch the scanner to update progress
                 original_scan = scanner.scan_generator
 
                 def scan_with_progress():
                     for file_info in original_scan():
-                        progress.tick(f"扫描: {file_info.name[:30]}")
+                        progress.tick(f"Scanning: {file_info.name[:30]}")
                         yield file_info
 
                 scanner.scan_generator = scan_with_progress
@@ -280,7 +280,7 @@ class InteractiveWizard:
             return report
 
         except Exception as e:
-            print(f"\n扫描失败: {e}")
+            print(f"\nScan failed: {e}")
             return None
 
     def _ask_custom_param(self, prompt: str, default: Optional[int]) -> Optional[int]:
@@ -292,22 +292,22 @@ class InteractiveWizard:
             try:
                 value = int(response)
                 if value <= 0:
-                    print("请输入正整数")
+                    print("Enter a positive whole number")
                     continue
                 return value
             except ValueError:
-                print("请输入有效的数字")
+                print("Enter a valid number")
 
     def _get_scan_mode_name(self, mode: str) -> str:
         """Get display name for scan mode."""
         names = {
-            "quick": "快速扫描",
-            "standard": "标准扫描",
-            "deep": "深度扫描",
-            "progressive": "渐进式扫描",
-            "custom": "自定义扫描",
+            "quick": "Quick scan",
+            "standard": "Standard scan",
+            "deep": "Deep scan",
+            "progressive": "Progressive scan",
+            "custom": "Custom scan",
         }
-        return names.get(mode, "未知模式")
+        return names.get(mode, "Unknown mode")
 
     def _show_scan_summary(self, report: CleanupReport, scanner: DirectoryScanner):
         """Display scan summary."""
@@ -318,16 +318,16 @@ class InteractiveWizard:
         )
 
         print("\n" + "=" * 60)
-        print("   扫描完成")
+        print("   Scan complete")
         print("=" * 60)
-        print(f"扫描文件数: {total_files:,}")
-        print(f"总大小: {self._format_size(total_size)}")
+        print(f"Files scanned: {total_files:,}")
+        print(f"Total size: {self._format_size(total_size)}")
 
         if scanner.stopped_early:
-            print(f"\n注意: 扫描提前停止 ({scanner.stop_reason})")
-            print("如需完整扫描，请选择 '深度扫描' 模式")
+            print(f"\nNote: the scan stopped early ({scanner.stop_reason})")
+            print("For a full scan, choose the 'Deep scan' mode")
 
-        print(f"发现重复文件组: {len(report.duplicates)}")
+        print(f"Duplicate groups found: {len(report.duplicates)}")
         print("=" * 60)
 
     def _display_report_and_select(self, report: CleanupReport):
@@ -363,12 +363,12 @@ class InteractiveWizard:
             # Merge selections
             if selected:
                 self.selected_files.update(selected)
-                print(f"\n当前已选择 {len(self.selected_files)} 个文件")
+                print(f"\nCurrently selected: {len(self.selected_files)} files")
 
     def _show_summary_statistics(self, report: CleanupReport):
         """Display summary statistics."""
         print("\n" + "=" * 60)
-        print("   统计摘要")
+        print("   Summary")
         print("=" * 60)
 
         # Count by risk level
@@ -376,13 +376,13 @@ class InteractiveWizard:
         for risk, files in report.by_risk.items():
             risk_counts[risk] = len(files)
 
-        print("\n按风险等级:")
+        print("\nBy risk level:")
         for risk, count in sorted(risk_counts.items(), key=lambda x: -x[1]):
             emoji = self._get_risk_emoji(risk)
-            print(f"  {emoji} {risk}: {count} 文件")
+            print(f"  {emoji} {risk}: {count} files")
 
         # Count by type
-        print("\n按类型 (前5):")
+        print("\nBy type (top 5):")
         type_items = sorted(
             report.by_type.items(),
             key=lambda x: sum(f.size for f in x[1]),
@@ -390,12 +390,12 @@ class InteractiveWizard:
         )[:5]
         for category, files in type_items:
             size = sum(f.size for f in files)
-            print(f"  - {category}: {len(files)} 文件, {self._format_size(size)}")
+            print(f"  - {category}: {len(files)} files, {self._format_size(size)}")
 
         # Duplicates
         if report.duplicates:
             dup_space = sum(d.reclaimable_space for d in report.duplicates)
-            print(f"\n重复文件: {len(report.duplicates)} 组, 可回收 {self._format_size(dup_space)}")
+            print(f"\nDuplicates: {len(report.duplicates)} groups, reclaimable {self._format_size(dup_space)}")
 
         print("=" * 60)
 
@@ -423,34 +423,34 @@ class InteractiveWizard:
 
         # Show cleanup summary grouped by risk
         print("\n" + "=" * 60)
-        print("   清理确认")
+        print("   Confirm cleanup")
         print("=" * 60)
 
-        print("\n即将删除的文件按风险分组:")
+        print("\nFiles to delete, grouped by risk:")
 
         # Safe files
         if "safe" in risk_breakdown:
             files, size = risk_breakdown["safe"]
-            print(f"\n  [OK] 安全级别: {len(files)} 文件, {self._format_size(size)}")
-            print("      临时文件、缓存等，可安全删除")
+            print(f"\n  [OK] Safe: {len(files)} files, {self._format_size(size)}")
+            print("      Temp and build artifacts, logs and caches")
 
         # Warning level
         if "confirm_needed" in risk_breakdown:
             files, size = risk_breakdown["confirm_needed"]
-            print(f"\n  [!] 警告级别: {len(files)} 文件, {self._format_size(size)}")
-            print("      开发工具索引、构建产物等，请确认")
+            print(f"\n  [!] Needs confirmation: {len(files)} files, {self._format_size(size)}")
+            print("      Downloads, media, documents and unclassified files")
 
         # Dangerous level
         if "protected" in risk_breakdown:
             files, size = risk_breakdown["protected"]
-            print(f"\n  [X] 危险级别: {len(files)} 文件, {self._format_size(size)}")
-            print("      用户文档、重要文件等，需逐个确认")
+            print(f"\n  [X] Protected: {len(files)} files, {self._format_size(size)}")
+            print("      Matches a protected path, extension or pattern")
 
             # Require "I UNDERSTAND" for dangerous files
-            print("\n  警告: 您选择了危险级别的文件！")
-            confirm = input("  输入 'I UNDERSTAND' 继续: ").strip()
+            print("\n  Warning: you selected protected files.")
+            confirm = input("  Type 'I UNDERSTAND' to continue: ").strip()
             if confirm != "I UNDERSTAND":
-                print("\n操作已取消")
+                print("\nCancelled")
                 return False
 
         # Total summary
@@ -458,12 +458,12 @@ class InteractiveWizard:
         total_files = sum(len(files) for files, _ in risk_breakdown.values())
 
         print("\n" + "-" * 60)
-        print(f"总计: {total_files} 文件, {self._format_size(total_size)}")
+        print(f"Total: {total_files} files, {self._format_size(total_size)}")
         print("=" * 60)
 
         # Final confirmation
-        print("\n此操作将永久删除选定的文件！")
-        confirm = input("确认删除？输入 'YES' 继续: ").strip()
+        print("\nThis permanently deletes the selected files.")
+        confirm = input("Delete them? Type 'YES' to continue: ").strip()
 
         return confirm == "YES"
 
@@ -512,7 +512,7 @@ class InteractiveWizard:
         Returns:
             True if successful, False otherwise.
         """
-        print("\n开始清理...")
+        print("\nCleaning...")
 
         # Use the UI's cleanup method
         success = self.ui.confirm_and_cleanup(
@@ -522,8 +522,8 @@ class InteractiveWizard:
         )
 
         if success:
-            print("\n清理完成！")
-            print(f"  删除文件: {len(self.selected_files)} 个")
+            print("\nCleanup complete.")
+            print(f"  Files deleted: {len(self.selected_files)}")
 
         return success
 

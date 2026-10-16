@@ -1,6 +1,13 @@
 # Platform-Specific Temporary File Locations
 
-This document provides comprehensive information about temporary file locations across different operating systems.
+Temporary and cache locations per operating system.
+
+## Contents
+
+- [Windows](#windows)
+- [macOS](#macos)
+- [Linux](#linux)
+- [Safety Guidelines](#safety-guidelines)
 
 ## Windows
 

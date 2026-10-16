@@ -1,5 +1,20 @@
 # File Organization Feature
 
+## Contents
+
+- [Overview](#overview)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Organization Strategies](#organization-strategies)
+- [Safety Features](#safety-features)
+- [Testing](#testing)
+- [Examples](#examples)
+- [Performance](#performance)
+- [Limitations](#limitations)
+- [Future Enhancements](#future-enhancements)
+- [License](#license)
+
 ## Overview
 
 The file organization feature provides intelligent file archival and organization capabilities with multiple strategies, dry-run preview, and safety checks.
@@ -24,7 +39,7 @@ No additional dependencies required - uses Python standard library only.
 #### List Available Strategies
 
 ```bash
-python scripts/organize_files.py --list-strategies
+python skills/disk-cleaner/scripts/organize_files.py --list-strategies
 ```
 
 Output:
@@ -55,23 +70,23 @@ GENERAL
 
 ```bash
 # Preview desktop organization
-python scripts/organize_files.py ~/Desktop --strategy desktop --preview
+python skills/disk-cleaner/scripts/organize_files.py ~/Desktop --strategy desktop --preview
 
-# Preview downloads organization with date分层
-python scripts/organize_files.py ~/Downloads --strategy downloads --preview
+# Preview downloads organization into date folders
+python skills/disk-cleaner/scripts/organize_files.py ~/Downloads --strategy downloads --preview
 
 # Show more files in preview
-python scripts/organize_files.py ~/Documents --strategy general --preview --max-files 100
+python skills/disk-cleaner/scripts/organize_files.py ~/Documents --strategy general --preview --max-files 100
 ```
 
 #### Execute Organization
 
 ```bash
 # Actually organize files (careful!)
-python scripts/organize_files.py ~/Desktop --strategy desktop --execute
+python skills/disk-cleaner/scripts/organize_files.py ~/Desktop --strategy desktop --execute
 
 # Verbose mode with progress
-python scripts/organize_files.py ~/Downloads --strategy downloads --execute --verbose
+python skills/disk-cleaner/scripts/organize_files.py ~/Downloads --strategy downloads --execute --verbose
 ```
 
 ### Python API

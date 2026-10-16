@@ -53,7 +53,7 @@ class FileClassifier:
 
         # Define type categories
         self.type_categories = {
-            "临时/构建产物": [
+            "Temp/build artifacts": [
                 "*.tmp",
                 "*.temp",
                 "*.cache",
@@ -64,21 +64,21 @@ class FileClassifier:
                 "*.pyc",
                 "*.pyo",
             ],
-            "日志文件": ["*.log"],
-            "缓存文件": [
+            "Log files": ["*.log"],
+            "Cache files": [
                 "*.cache",
                 ".cache",
                 "Thumbs.db",
                 ".DS_Store",
             ],
-            "备份文件": [
+            "Backup files": [
                 "*.bak",
                 "*.backup",
                 "*~",
                 "*.old",
             ],
-            "下载文件": None,  # Special handling by path
-            "媒体文件": [
+            "Downloads": None,  # Special handling by path
+            "Media files": [
                 "*.mp4",
                 "*.mkv",
                 "*.avi",
@@ -91,7 +91,7 @@ class FileClassifier:
                 "*.gif",
                 "*.bmp",
             ],
-            "文档文件": [
+            "Documents": [
                 "*.pdf",
                 "*.doc",
                 "*.docx",
@@ -101,7 +101,7 @@ class FileClassifier:
                 "*.pptx",
                 "*.odt",
             ],
-            "压缩文件": [
+            "Archives": [
                 "*.zip",
                 "*.tar",
                 "*.gz",
@@ -136,10 +136,10 @@ class FileClassifier:
                 RiskLevel.PROTECTED.value: [],
             },
             "by_age": {
-                "最近创建 (7天内)": [],
-                "近期文件 (30天内)": [],
-                "陈旧文件 (90天内)": [],
-                "很旧 (90天以上)": [],
+                "Recent (within 7 days)": [],
+                "Recent (within 30 days)": [],
+                "Old (within 90 days)": [],
+                "Very old (over 90 days)": [],
             },
         }
 
@@ -178,7 +178,7 @@ class FileClassifier:
         for rule in self.custom_rules:
             pattern = rule.get("pattern", "")
             if self._matches_pattern(file, pattern):
-                return rule.get("category", "其他文件")
+                return rule.get("category", "Other files")
 
         # Check built-in categories
         for category, patterns in self.type_categories.items():
@@ -191,9 +191,9 @@ class FileClassifier:
 
         # Special handling for downloads
         if "downloads" in file.path.lower():
-            return "下载文件"
+            return "Downloads"
 
-        return "其他文件"
+        return "Other files"
 
     def _classify_risk(self, file: FileInfo) -> RiskLevel:
         """
@@ -217,12 +217,12 @@ class FileClassifier:
         file_type = self._classify_type(file)
 
         # Safe to delete categories
-        safe_categories = ["临时/构建产物", "日志文件", "缓存文件"]
+        safe_categories = ["Temp/build artifacts", "Log files", "Cache files"]
         if file_type in safe_categories:
             return RiskLevel.SAFE
 
         # Confirm needed for user data
-        confirm_categories = ["下载文件", "媒体文件", "文档文件"]
+        confirm_categories = ["Downloads", "Media files", "Documents"]
         if file_type in confirm_categories:
             return RiskLevel.CONFIRM_NEEDED
 
@@ -244,13 +244,13 @@ class FileClassifier:
         age = now - file_time
 
         if age < timedelta(days=7):
-            return "最近创建 (7天内)"
+            return "Recent (within 7 days)"
         elif age < timedelta(days=30):
-            return "近期文件 (30天内)"
+            return "Recent (within 30 days)"
         elif age < timedelta(days=90):
-            return "陈旧文件 (90天内)"
+            return "Old (within 90 days)"
         else:
-            return "很旧 (90天以上)"
+            return "Very old (over 90 days)"
 
     def _matches_pattern(self, file: FileInfo, pattern: str) -> bool:
         """

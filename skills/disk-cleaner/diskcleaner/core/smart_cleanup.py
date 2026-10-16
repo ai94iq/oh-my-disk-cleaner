@@ -216,36 +216,36 @@ class SmartCleanupEngine:
         """
         lines = [
             "=" * 60,
-            "磁盘清理分析报告",
+            "Disk Cleanup Analysis Report",
             "=" * 60,
-            f"扫描路径: {self.target_path}",
-            f"扫描时间: {datetime.fromtimestamp(report.timestamp).strftime('%Y-%m-%d %H:%M:%S')}",
-            f"耗时: {report.scan_time:.2f} 秒",
+            f"Scan path: {self.target_path}",
+            f"Scan time: {datetime.fromtimestamp(report.timestamp).strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Duration: {report.scan_time:.2f} s",
             "",
-            "文件统计:",
-            f"  总文件数: {report.total_files:,}",
-            f"  总大小: {self._format_size(report.total_size)}",
+            "File statistics:",
+            f"  Total files: {report.total_files:,}",
+            f"  Total size: {self._format_size(report.total_size)}",
             "",
-            "可回收空间:",
-            "  安全删除: {} ({:,} 文件)".format(
+            "Reclaimable space:",
+            "  Safe to delete: {} ({:,} files)".format(
                 self._format_size(report.safe_reclaimable),
                 len(report.by_risk.get("safe", [])),
             ),
-            "  需确认: {} ({:,} 文件)".format(
+            "  Needs confirmation: {} ({:,} files)".format(
                 self._format_size(report.confirm_reclaimable),
                 len(report.by_risk.get("confirm_needed", [])),
             ),
-            "  重复文件: {} ({} 组)".format(
+            "  Duplicates: {} ({} groups)".format(
                 self._format_size(report.duplicate_reclaimable), len(report.duplicates)
             ),
-            "  ————————————————",
-            "  总计可回收: {}".format(self._format_size(report.total_reclaimable)),
+            "  ----------------",
+            "  Total reclaimable: {}".format(self._format_size(report.total_reclaimable)),
             "",
         ]
 
         # Add breakdown by type if any files found
         if report.by_type:
-            lines.append("按类型分类:")
+            lines.append("By type:")
             for file_type, type_files in sorted(
                 report.by_type.items(),
                 key=lambda x: sum(f.size for f in x[1]),
@@ -254,21 +254,21 @@ class SmartCleanupEngine:
                 if type_files:
                     total_size = sum(f.size for f in type_files)
                     size_str = self._format_size(total_size)
-                    lines.append("  {}: {} 文件, {}".format(file_type, len(type_files), size_str))
+                    lines.append("  {}: {} files, {}".format(file_type, len(type_files), size_str))
 
         # Add duplicate info if found
         if report.duplicates:
             lines.append("")
-            lines.append("重复文件组 (前5组):")
+            lines.append("Duplicate groups (top 5):")
             for i, dup in enumerate(report.duplicates[:5], 1):
                 lines.append(
-                    f"  {i}. {dup.count} 个重复文件, {self._format_size(dup.size)} 每个, "
-                    f"可回收 {self._format_size(dup.reclaimable_space)}"
+                    f"  {i}. {dup.count} duplicate files, {self._format_size(dup.size)} each, "
+                    f"reclaimable {self._format_size(dup.reclaimable_space)}"
                 )
                 for j, file in enumerate(dup.files[:3], 1):
                     lines.append(f"     {j}. {file.path}")
                 if len(dup.files) > 3:
-                    lines.append(f"     ... 还有 {len(dup.files) - 3} 个文件")
+                    lines.append(f"     ... {len(dup.files) - 3} more files")
 
         lines.append("")
         lines.append(60 * "=")
@@ -325,7 +325,7 @@ class SmartCleanupEngine:
 
         Args:
             report: CleanupReport.
-            age_group: Age group name (e.g., "很旧 (90天以上)").
+            age_group: Age group name (e.g., "Very old (over 90 days)").
 
         Returns:
             List of FileInfo objects in that age group.

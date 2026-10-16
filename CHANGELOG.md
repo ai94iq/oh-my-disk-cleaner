@@ -5,9 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Contents
+
+- [Unreleased](#unreleased)
+- [2.0.0 - 2025-01-22](#200---2025-01-22)
+- [1.0.0 - Previous Release](#100---previous-release)
+
 ## [Unreleased]
 
+### Security
+- The skill imports only its bundled `diskcleaner` package. The bootstrap no
+  longer searches the working directory, home, `DISK_CLEANER_SKILL_PATH`,
+  `sys.path` or installed packages, any of which could replace the cleaner's
+  code.
+- One protected-path check, `is_protected` in `diskcleaner/core/safety.py`,
+  is shared by the cleaner, `SafetyChecker` and the classifier. It compares by
+  path component (`/usr-local` is not inside `/usr`). Config files can add
+  protections but cannot remove the built-in ones.
+- The wizard keeps a file when its backup fails, refuses protected paths and
+  removes links without touching their targets. Its delete step used to call a
+  missing method.
+- Process killing (`process_manager.py`, `SafetyChecker.terminate_process`)
+  is removed; locked files are skipped.
+- CI actions and pre-commit hooks are pinned by commit SHA; workflows run with
+  read-only permissions.
+
+### Changed
+- Python 3.11 or newer (3.10 reached end of life in October 2026); dev and
+  optional dependency floors are the latest releases.
+- The package exists once, under `skills/disk-cleaner/diskcleaner/`.
+- Code and docs are English and plain ASCII; SKILL.md is rewritten as a short
+  workflow guide.
+
+### Removed
+- `diskcleaner/optimization/delete.py` and `scripts/package_skill.py`
+  (unused), the `.skill` archive, `README_zh.md`, the V2.1 summary and the
+  duplicate install guides.
+
 ### Fixed
+- `analyze_progressive.py` crashed on import; its folder totals now cover
+  every top-level folder at full depth, sort on exact bytes, survive Ctrl+C,
+  and `--include-windows` counts system folders.
 - **Directory sizing undercounted deep trees** - `DiskAnalyzer._get_dir_size_fast`
   defaulted to `max_depth=1`, so the "Largest Directories" ranking stopped
   measuring after two levels and reported deeply nested content (Wine prefixes,
@@ -19,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Core Functionality
-- **Smart Cleanup Engine** - Intelligent 3D file classification (type × risk × age)
+- **Smart Cleanup Engine** - Intelligent 3D file classification (type x risk x age)
 - **Duplicate Detection** - Adaptive strategy automatically switches between fast and accurate modes
 - **Incremental Scanning** - Cache-based optimization for 10x faster repeated scans
 - **File Lock Detection** - Cross-platform file locking detection (handle.exe/lsof)

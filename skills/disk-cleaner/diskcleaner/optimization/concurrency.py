@@ -79,14 +79,14 @@ class ConcurrencyManager:
         cpu_count = os.cpu_count() or 1
 
         if purpose.startswith("io_"):
-            # I/O密集型：可以用更多线程
-            # 限制在32以内，避免过多上下文切换
+            # I/O bound: more threads help
+            # Cap at 32 to avoid excessive context switching
             return min(32, cpu_count * 4)
         elif purpose == "ui_update":
-            # UI更新只需要少量线程
+            # UI updates need only a few threads
             return 2
         else:
-            # 默认：CPU核心数
+            # Default: CPU core count
             return cpu_count
 
     def _optimal_processes(self, purpose: str) -> int:
@@ -98,10 +98,10 @@ class ConcurrencyManager:
         cpu_count = os.cpu_count() or 1
 
         if purpose == "hash_compute":
-            # 哈希计算是CPU密集型
+            # Hashing is CPU bound
             return cpu_count
         else:
-            # 默认
+            # Default
             return cpu_count
 
     def shutdown_pool(self, purpose: str, wait: bool = True):
