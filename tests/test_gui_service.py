@@ -84,3 +84,12 @@ def test_drives_nonempty():
 def test_browser_history_is_not_default():
     assert "browser_history" in service.CATEGORIES
     assert "browser_history" not in service.DEFAULT_CATEGORIES
+
+
+def test_a_whole_drive_is_not_cut_short_by_the_file_cap():
+    # The default cap was 2,000,000 entries; this machine's C:\ already holds 1,959,658
+    # (measured), so a fuller disk stopped with partial results. Memory does not grow
+    # with the count: only per-folder totals and files over 10 MB are kept.
+    import inspect
+
+    assert inspect.signature(service.analyze).parameters["max_files"].default >= 20_000_000

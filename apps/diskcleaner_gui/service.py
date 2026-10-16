@@ -133,7 +133,7 @@ def drives() -> list:
 def analyze(
     path: str,
     *,
-    max_files: int = 2_000_000,
+    max_files: int = 20_000_000,
     max_seconds: int = 120,
     cancel: Optional[threading.Event] = None,
     progress: Optional[Callable[[int], None]] = None,
