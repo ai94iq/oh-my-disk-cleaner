@@ -1,14 +1,11 @@
-# Desktop app: tests offscreen (Qt) on every push, bundles built
+# Desktop app: tests offscreen (Qt) on a gui-v tag or manual run, bundles built
 # and self-checked on every run, and a gui-vX.Y.Z tag (equal to apps/diskcleaner_gui __version__)
 # attaches them to a GitHub release. The gui- prefix keeps these tags apart from the skill's.
 name: Desktop apps
 
 on:
   push:
-    branches: [ main, feature/* ]
-    tags: [ 'gui-v*.*.*' ]
-  pull_request:
-    branches: [ main, feature/* ]
+    tags: ['gui-v*.*.*']
   workflow_dispatch:
 
 permissions:
